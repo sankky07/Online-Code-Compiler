@@ -7,20 +7,14 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const JUDGE0_API = "https://judge0-ce.p.rapidapi.com/submissions";
-const JUDGE0_API_KEY = process.env.JUDGE0_API_KEY; // Use environment variable
-
-const headers = {
-    "x-rapidapi-host": "judge0-ce.p.rapidapi.com",
-    "x-rapidapi-key": JUDGE0_API_KEY,
-};
+const PISTON_API = "https://emkc.org/api/v2/piston/execute";
 
 const languageMapping = {
-    "C": 50,
-    "C++": 54,
-    "Java": 62,
-    "Python": 71,
-    "JavaScript": 63,
+    "C": "c",
+    "C++": "cpp",
+    "Java": "java",
+    "Python": "python",
+    "JavaScript": "javascript",
 };
 
 // API Route to execute code
@@ -32,43 +26,25 @@ app.post("/execute", async (req, res) => {
     }
 
     try {
-        // Submit code to Judge0
-        const response = await axios.post(
-            `${JUDGE0_API}?base64_encoded=false&wait=true`,
-            {
-                source_code: code,
-                language_id: languageMapping[language],
-                stdin: input || "",
-            },
-            { headers }
-        );
+        // Submit code to Piston API
+        const response = await axios.post(PISTON_API, {
+            language: languageMapping[language],
+            version: "*",
+            files: [{ content: code }],
+            stdin: input || "",
+        });
 
-        const { stdout, stderr, message, status, time, memory, compile_output } = response.data;
+        const { run } = response.data;
+        const { stdout, stderr } = run;
 
-        let outputMessage = "";
-        let errorDetails = "";
-
-        if (status && status.id !== 3) {
-            // Handle Compilation or Runtime Errors
-            if (compile_output) {
-                outputMessage = "Compilation Error";
-                errorDetails = compile_output;
-            } else if (stderr) {
-                outputMessage = "Runtime Error";
-                errorDetails = stderr;
-            } else {
-                outputMessage = "Unknown Error";
-                errorDetails = message || "Something went wrong.";
-            }
-        } else {
-            outputMessage = stdout || "No output";
-        }
+        let outputMessage = stdout || "No output";
+        let errorDetails = stderr ? stderr : "";
 
         res.json({
             output: outputMessage,
             errorDetails: errorDetails,
-            executionTime: time || "N/A",
-            memoryUsage: memory || "N/A",
+            executionTime: "N/A",
+            memoryUsage: "N/A",
         });
     } catch (error) {
         console.error("Execution error:", error.response ? error.response.data : error.message);
