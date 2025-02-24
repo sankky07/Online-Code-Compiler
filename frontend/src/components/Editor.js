@@ -75,7 +75,6 @@ const Editor = () => {
       if (run.stderr) {
         result += `\nError Details: ${run.stderr}`;
       }
-      result += `\nExecution Time: ${run.time || "N/A"}\nMemory Usage: ${run.memory || "N/A"}`;
 
       setOutput(result);
     } catch (error) {
