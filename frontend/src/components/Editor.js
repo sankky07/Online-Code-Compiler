@@ -63,7 +63,7 @@ const Editor = () => {
 
   const handleRun = async () => {
     try {
-        const response = await axios.post("http://localhost:5000/execute", {
+        const response = await axios.post("https://online-code-compiler-ljop.onrender.com", {
             code,
             language,
             input,
