@@ -14,7 +14,7 @@ Features ✨
 Tech Stack 🛠
 Frontend: React, CodeMirror, MUI
 Backend: Node.js, Express, Axios
-API: Judge0 API
+API: Piston API
 Deployment: Vercel (Frontend), Render (Backend)
 
 Installation & Setup 🏗
