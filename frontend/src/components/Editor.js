@@ -226,7 +226,7 @@ const Editor = () => {
           }}
         >
           <Typography variant="body2">
-            © {new Date().getFullYear()} Made by [Your Name]
+            © {new Date().getFullYear()} Made by [Sanket Sahu]
           </Typography>
         </Box>
       </Box>
