@@ -105,139 +105,129 @@ const Editor = () => {
       <Box
         sx={{
           display: "flex",
+          flexDirection: "column",
           height: "100vh",
           bgcolor: "background.default",
           color: "text.primary",
         }}
       >
-        {/* Left Side - Code Editor */}
-        <Box sx={{ flex: 1, padding: 2 }}>
-          {/* Dark Mode Toggle Button */}
-          <IconButton
-            onClick={toggleDarkMode}
-            sx={{ position: "absolute", top: 10, right: 10 }}
-          >
-            {darkMode ? <Brightness7 /> : <Brightness4 />}
-          </IconButton>
+        <Box sx={{ display: "flex", flex: 1 }}>
+          {/* Left Side - Code Editor */}
+          <Box sx={{ flex: 1, padding: 2 }}>
+            {/* Dark Mode Toggle Button */}
+            <IconButton
+              onClick={toggleDarkMode}
+              sx={{ position: "absolute", top: 10, right: 10 }}
+            >
+              {darkMode ? <Brightness7 /> : <Brightness4 />}
+            </IconButton>
 
-          <Typography variant="h6" sx={{ marginBottom: 1 }}>
-            Code Editor
-          </Typography>
+            <Typography variant="h6" sx={{ marginBottom: 1 }}>
+              Code Editor
+            </Typography>
 
-          {/* Code Editor inside a Box */}
+            {/* Code Editor inside a Box */}
+            <Box
+              sx={{
+                borderRadius: 2,
+                border: "1px solid",
+                borderColor: darkMode ? "#ffffff55" : "#00000022",
+                padding: 1,
+                bgcolor: "background.paper",
+              }}
+            >
+              <CodeMirror
+                value={code}
+                height="80vh"
+                theme={darkMode ? "dark" : "light"}
+                extensions={[languages[language].extension]}
+                onChange={(newCode) => setCode(newCode)}
+              />
+            </Box>
+          </Box>
+
+          {/* Right Side - Input, Output, and Controls */}
           <Box
             sx={{
-              borderRadius: 2,
-              border: "1px solid",
-              borderColor: darkMode ? "#ffffff55" : "#00000022",
-              padding: 1,
-              bgcolor: "background.paper",
+              width: "30%",
+              padding: 2,
+              borderLeft: "2px solid",
+              borderColor: darkMode ? "#ffffff22" : "#00000022",
+              display: "flex",
+              flexDirection: "column",
             }}
           >
-            <CodeMirror
-              value={code}
-              height="80vh"
-              theme={darkMode ? "dark" : "light"}
-              extensions={[languages[language].extension]}
-              onChange={(newCode) => setCode(newCode)}
+            <Typography variant="h6" sx={{ marginBottom: 1 }}>
+              Settings
+            </Typography>
+
+            {/* Language Selection */}
+            <TextField
+              select
+              label="Select Language"
+              value={language}
+              onChange={handleLanguageChange}
+              fullWidth
+              sx={{
+                marginBottom: 2,
+                bgcolor: "background.paper",
+              }}
+            >
+              {Object.keys(languages).map((lang) => (
+                <MenuItem key={lang} value={lang}>
+                  {lang}
+                </MenuItem>
+              ))}
+            </TextField>
+
+            {/* Input Box */}
+            <Typography variant="subtitle1">Input</Typography>
+            <TextField
+              multiline
+              rows={3}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Enter input here..."
+              fullWidth
+              sx={{ marginBottom: 2, bgcolor: "background.paper" }}
+            />
+
+            {/* Run Button */}
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleRun}
+              sx={{ marginBottom: 2 }}
+            >
+              Run Code
+            </Button>
+
+            {/* Output Box */}
+            <Typography variant="subtitle1">Output</Typography>
+            <TextField
+              multiline
+              rows={6}
+              value={output}
+              fullWidth
+              InputProps={{ readOnly: true }}
+              sx={{ bgcolor: "background.paper" }}
             />
           </Box>
         </Box>
 
-        {/* Right Side - Input, Output, and Controls */}
+        {/* Footer Section */}
         <Box
           sx={{
-            width: "30%",
-            padding: 2,
-            borderLeft: "2px solid",
+            textAlign: "center",
+            padding: 1,
+            bgcolor: "background.paper",
+            borderTop: "1px solid",
             borderColor: darkMode ? "#ffffff22" : "#00000022",
-            display: "flex",
-            flexDirection: "column",
           }}
         >
-          <Typography variant="h6" sx={{ marginBottom: 1 }}>
-            Settings
+          <Typography variant="body2">
+            © {new Date().getFullYear()} Made by [Your Name]
           </Typography>
-
-          {/* Language Selection */}
-          <TextField
-            select
-            label="Select Language"
-            value={language}
-            onChange={handleLanguageChange}
-            fullWidth
-            sx={{
-              marginBottom: 2,
-              bgcolor: "background.paper",
-            }}
-          >
-            {Object.keys(languages).map((lang) => (
-              <MenuItem key={lang} value={lang}>
-                {lang}
-              </MenuItem>
-            ))}
-          </TextField>
-
-          {/* Input Box */}
-          <Typography variant="subtitle1">Input</Typography>
-          <TextField
-            multiline
-            rows={3}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Enter input here..."
-            fullWidth
-            sx={{ marginBottom: 2, bgcolor: "background.paper" }}
-          />
-
-          {/* Run Button */}
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleRun}
-            sx={{ marginBottom: 2 }}
-          >
-            Run Code
-          </Button>
-
-          {/* Output Box */}
-          <Typography variant="subtitle1">Output</Typography>
-          <TextField
-            multiline
-            rows={6}
-            value={output}
-            fullWidth
-            InputProps={{ readOnly: true }}
-            sx={{ bgcolor: "background.paper" }}
-          />
-
-          {/* Error Box */}
-          {error && (
-            <Box sx={{ marginTop: 2 }}>
-              <Typography variant="subtitle1" color="error">
-                Error
-              </Typography>
-              <TextField
-                multiline
-                rows={3}
-                value={error}
-                fullWidth
-                InputProps={{ readOnly: true }}
-                sx={{ bgcolor: "background.paper" }}
-              />
-              <Typography variant="subtitle1" sx={{ marginTop: 1 }}>
-                Possible Fix
-              </Typography>
-              <TextField
-                multiline
-                rows={2}
-                value={errorSuggestion}
-                fullWidth
-                InputProps={{ readOnly: true }}
-                sx={{ bgcolor: "background.paper" }}
-              />
-            </Box>
-          )}
         </Box>
       </Box>
     </ThemeProvider>
