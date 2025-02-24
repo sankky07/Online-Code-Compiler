@@ -7,7 +7,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PISTON_API = "https://emkc.org/api/v2/piston/execute";
+const PISTON_API = "https://emkc.org/api/v2/piston/execute"; // Piston API Endpoint
 
 const languageMapping = {
     "C": "c",
@@ -29,22 +29,21 @@ app.post("/execute", async (req, res) => {
         // Submit code to Piston API
         const response = await axios.post(PISTON_API, {
             language: languageMapping[language],
-            version: "*",
+            version: "*", // Uses the latest version
             files: [{ content: code }],
             stdin: input || "",
         });
 
         const { run } = response.data;
-        const { stdout, stderr } = run;
 
-        let outputMessage = stdout || "No output";
-        let errorDetails = stderr ? stderr : "";
+        let outputMessage = run.stdout || "No output";
+        let errorDetails = run.stderr || "";
 
         res.json({
             output: outputMessage,
             errorDetails: errorDetails,
-            executionTime: "N/A",
-            memoryUsage: "N/A",
+            executionTime: run.time || "N/A",
+            memoryUsage: run.memory || "N/A",
         });
     } catch (error) {
         console.error("Execution error:", error.response ? error.response.data : error.message);
