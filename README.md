@@ -24,13 +24,12 @@ git clone https://github.com/sankky07/online-code-compiler.git
 cd online-code-compiler
 
 2️⃣ Install Dependencies
-Frontend
 
+Frontend
 cd frontend
 npm install
 
 Backend
-
 cd backend
 npm install
 
