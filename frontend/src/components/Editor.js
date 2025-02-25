@@ -197,7 +197,7 @@ const Editor = () => {
 
         {/* Footer */}
         <Box sx={{ textAlign: "center", padding: 1, bgcolor: "background.paper", borderTop: "1px solid", borderColor: darkMode ? "#ffffff22" : "#00000022" }}>
-          <Typography variant="body2">© {new Date().getFullYear()} Made by [Your Name]</Typography>
+          <Typography variant="body2">© {new Date().getFullYear()} Made by Sanket Sahu</Typography>
         </Box>
       </Box>
     </ThemeProvider>
