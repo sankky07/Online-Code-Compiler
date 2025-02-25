@@ -7,6 +7,7 @@ import {
   MenuItem,
   Typography,
   IconButton,
+  Tooltip,
 } from "@mui/material";
 import { Brightness4, Brightness7 } from "@mui/icons-material";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
@@ -28,9 +29,9 @@ using namespace std;
 int main() {
     cout << "Hello, World!" << endl;
     return 0;
-}`, 
+}`,
 
-  Python: `print("Hello, World!")`, 
+  Python: `print("Hello, World!")`,
 
   C: `#include <stdio.h>
 int main() {
@@ -52,8 +53,6 @@ const Editor = () => {
   const [code, setCode] = useState(defaultPrograms["Java"]); // Set default code
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
-  const [error, ] = useState(""); // Keeping only state if needed
-  const [errorSuggestion, ] = useState("");
   const [darkMode, setDarkMode] = useState(true); // Default: Dark Mode
 
   // Toggle Dark Mode
@@ -63,12 +62,15 @@ const Editor = () => {
 
   const handleRun = async () => {
     try {
-      const response = await axios.post("https://emkc.org/api/v2/piston/execute", {
-        language: languages[language].id,
-        version: "*",
-        files: [{ content: code }],
-        stdin: input || "",
-      });
+      const response = await axios.post(
+        "https://emkc.org/api/v2/piston/execute",
+        {
+          language: languages[language].id,
+          version: "*",
+          files: [{ content: code }],
+          stdin: input || "",
+        }
+      );
 
       const { run } = response.data;
       let result = `Output: ${run.stdout || "No output"}`;
@@ -114,19 +116,11 @@ const Editor = () => {
         <Box sx={{ display: "flex", flex: 1 }}>
           {/* Left Side - Code Editor */}
           <Box sx={{ flex: 1, padding: 2 }}>
-            {/* Dark Mode Toggle Button */}
-            <IconButton
-              onClick={toggleDarkMode}
-              sx={{ position: "absolute", top: 10, right: 10 }}
-            >
-              {darkMode ? <Brightness7 /> : <Brightness4 />}
-            </IconButton>
-
             <Typography variant="h6" sx={{ marginBottom: 1 }}>
               Code Editor
             </Typography>
 
-            {/* Code Editor inside a Box */}
+            {/* Code Editor Box */}
             <Box
               sx={{
                 borderRadius: 2,
@@ -134,6 +128,9 @@ const Editor = () => {
                 borderColor: darkMode ? "#ffffff55" : "#00000022",
                 padding: 1,
                 bgcolor: "background.paper",
+                boxShadow: darkMode
+                  ? "0px 4px 10px rgba(255, 255, 255, 0.1)"
+                  : "0px 4px 10px rgba(0, 0, 0, 0.1)",
               }}
             >
               <CodeMirror
@@ -161,6 +158,16 @@ const Editor = () => {
               Settings
             </Typography>
 
+            {/* Dark Mode Toggle Button */}
+            <Tooltip title="Toggle Dark Mode">
+              <IconButton
+                onClick={toggleDarkMode}
+                sx={{ alignSelf: "flex-end", marginBottom: 2 }}
+              >
+                {darkMode ? <Brightness7 /> : <Brightness4 />}
+              </IconButton>
+            </Tooltip>
+
             {/* Language Selection */}
             <TextField
               select
@@ -168,10 +175,8 @@ const Editor = () => {
               value={language}
               onChange={handleLanguageChange}
               fullWidth
-              sx={{
-                marginBottom: 2,
-                bgcolor: "background.paper",
-              }}
+              variant="outlined"
+              sx={{ marginBottom: 2, bgcolor: "background.paper" }}
             >
               {Object.keys(languages).map((lang) => (
                 <MenuItem key={lang} value={lang}>
@@ -189,6 +194,7 @@ const Editor = () => {
               onChange={(e) => setInput(e.target.value)}
               placeholder="Enter input here..."
               fullWidth
+              variant="outlined"
               sx={{ marginBottom: 2, bgcolor: "background.paper" }}
             />
 
@@ -197,7 +203,13 @@ const Editor = () => {
               variant="contained"
               color="primary"
               onClick={handleRun}
-              sx={{ marginBottom: 2 }}
+              sx={{
+                marginBottom: 2,
+                padding: "10px",
+                fontWeight: "bold",
+                borderRadius: "8px",
+                "&:hover": { backgroundColor: darkMode ? "#1e88e5" : "#1565c0" },
+              }}
             >
               Run Code
             </Button>
@@ -209,25 +221,11 @@ const Editor = () => {
               rows={6}
               value={output}
               fullWidth
+              variant="outlined"
               InputProps={{ readOnly: true }}
               sx={{ bgcolor: "background.paper" }}
             />
           </Box>
-        </Box>
-
-        {/* Footer Section */}
-        <Box
-          sx={{
-            textAlign: "center",
-            padding: 1,
-            bgcolor: "background.paper",
-            borderTop: "1px solid",
-            borderColor: darkMode ? "#ffffff22" : "#00000022",
-          }}
-        >
-          <Typography variant="body2">
-            © {new Date().getFullYear()} Made by [Sanket Sahu]
-          </Typography>
         </Box>
       </Box>
     </ThemeProvider>
