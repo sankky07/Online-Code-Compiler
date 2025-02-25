@@ -19,6 +19,7 @@
     "@uiw/codemirror-theme-github": "^4.23.8",
     "@uiw/codemirror-theme-material": "^4.23.8",
     "@uiw/codemirror-themes": "^4.23.8",
+    "@uiw/codemirror-themes-all@^5.0.2",
     "@uiw/react-codemirror": "^4.23.8",
     "axios": "^1.7.9",
     "codemirror": "^5.65.18",
