@@ -8,6 +8,7 @@ import {
   Typography,
   IconButton,
   Select,
+  useMediaQuery,
 } from "@mui/material";
 import { Brightness4, Brightness7, FileCopy, GetApp } from "@mui/icons-material";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
@@ -60,6 +61,9 @@ const Editor = () => {
   const [output, setOutput] = useState("");
   const [darkMode, setDarkMode] = useState(true);
   const [theme, setTheme] = useState("GitHub Dark");
+
+  // Check if the screen is small (mobile view)
+  const isMobile = useMediaQuery("(max-width: 768px)");
 
   // Toggle Dark Mode
   const toggleDarkMode = () => setDarkMode((prev) => !prev);
@@ -126,78 +130,83 @@ const Editor = () => {
 
   return (
     <ThemeProvider theme={muiTheme}>
-      <Box sx={{ display: "flex", flexDirection: "column", height: "100vh", bgcolor: "background.default", color: "text.primary" }}>
-
-        {/* Top Section */}
-        <Box sx={{ display: "flex", flex: 1 }}>
-
-          {/* Left Side - Code Editor */}
-          <Box sx={{ flex: 1, padding: 2 }}>
-
-            {/* Dark Mode & Theme Selector */}
-            <Box sx={{ display: "flex", justifyContent: "space-between", marginBottom: 2 }}>
-              <IconButton onClick={toggleDarkMode}>
-                {darkMode ? <Brightness7 /> : <Brightness4 />}
-              </IconButton>
-
-              <Select value={theme} onChange={handleThemeChange} size="small" sx={{ bgcolor: "background.paper" }}>
-                {Object.keys(themes).map((t) => (
-                  <MenuItem key={t} value={t}>{t}</MenuItem>
-                ))}
-              </Select>
-            </Box>
-
-            <Typography variant="h6" sx={{ marginBottom: 1 }}>Code Editor</Typography>
-
-            <Box sx={{ borderRadius: 2, border: "1px solid", borderColor: darkMode ? "#ffffff55" : "#00000022", padding: 1, bgcolor: "background.paper" }}>
-              <CodeMirror
-                value={code}
-                height="70vh"
-                theme={themes[theme]}
-                extensions={[languages[language].extension]}
-                onChange={(newCode) => setCode(newCode)}
-              />
-            </Box>
-
-            {/* Copy & Download Buttons */}
-            <Box sx={{ display: "flex", justifyContent: "flex-end", marginTop: 1 }}>
-              <Button startIcon={<FileCopy />} onClick={handleCopyCode} variant="contained" sx={{ marginRight: 1 }}>
-                Copy Code
-              </Button>
-              <Button startIcon={<GetApp />} onClick={handleDownloadCode} variant="contained" color="secondary">
-                Download Code
-              </Button>
-            </Box>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: isMobile ? "column" : "row",
+          height: "100vh",
+          bgcolor: "background.default",
+          color: "text.primary",
+          padding: 2,
+        }}
+      >
+        {/* Code Editor Section */}
+        <Box sx={{ flex: 1, minHeight: isMobile ? "50vh" : "auto", padding: 2 }}>
+          {/* Dark Mode & Theme Selector */}
+          <Box sx={{ display: "flex", justifyContent: "space-between", marginBottom: 2 }}>
+            <IconButton onClick={toggleDarkMode}>
+              {darkMode ? <Brightness7 /> : <Brightness4 />}
+            </IconButton>
+            <Select value={theme} onChange={handleThemeChange} size="small" sx={{ bgcolor: "background.paper" }}>
+              {Object.keys(themes).map((t) => (
+                <MenuItem key={t} value={t}>
+                  {t}
+                </MenuItem>
+              ))}
+            </Select>
           </Box>
 
-          {/* Right Side - Settings & Output */}
-          <Box sx={{ width: "30%", padding: 2, borderLeft: "2px solid", borderColor: darkMode ? "#ffffff22" : "#00000022", display: "flex", flexDirection: "column" }}>
+          <Typography variant="h6">Code Editor</Typography>
+          <Box sx={{ border: "1px solid", borderColor: darkMode ? "#ffffff55" : "#00000022", padding: 1, bgcolor: "background.paper" }}>
+            <CodeMirror
+              value={code}
+              height={isMobile ? "40vh" : "70vh"}
+              theme={themes[theme]}
+              extensions={[languages[language].extension]}
+              onChange={(newCode) => setCode(newCode)}
+            />
+          </Box>
 
-            <Typography variant="h6" sx={{ marginBottom: 1 }}>Settings</Typography>
-
-            {/* Language Selection */}
-            <TextField select label="Select Language" value={language} onChange={handleLanguageChange} fullWidth sx={{ marginBottom: 2, bgcolor: "background.paper" }}>
-              {Object.keys(languages).map((lang) => (
-                <MenuItem key={lang} value={lang}>{lang}</MenuItem>
-              ))}
-            </TextField>
-
-            {/* Input Box */}
-            <Typography variant="subtitle1">Input</Typography>
-            <TextField multiline rows={3} value={input} onChange={(e) => setInput(e.target.value)} placeholder="Enter input here..." fullWidth sx={{ marginBottom: 2, bgcolor: "background.paper" }} />
-
-            {/* Run Button */}
-            <Button variant="contained" color="primary" onClick={handleRun} sx={{ marginBottom: 2 }}>Run Code</Button>
-
-            {/* Output Box */}
-            <Typography variant="subtitle1">Output</Typography>
-            <TextField multiline rows={6} value={output} fullWidth InputProps={{ readOnly: true }} sx={{ bgcolor: "background.paper" }} />
+          {/* Buttons */}
+          <Box sx={{ display: "flex", justifyContent: "flex-end", marginTop: 1 }}>
+            <Button startIcon={<FileCopy />} onClick={handleCopyCode} variant="contained" sx={{ marginRight: 1 }}>
+              Copy
+            </Button>
+            <Button startIcon={<GetApp />} onClick={handleDownloadCode} variant="contained" color="secondary">
+              Download
+            </Button>
           </Box>
         </Box>
 
-        {/* Footer */}
-        <Box sx={{ textAlign: "center", padding: 1, bgcolor: "background.paper", borderTop: "1px solid", borderColor: darkMode ? "#ffffff22" : "#00000022" }}>
-          <Typography variant="body2">© {new Date().getFullYear()} Made by Sanket Sahu</Typography>
+        {/* Settings & Output Section */}
+        <Box
+          sx={{
+            width: isMobile ? "100%" : "30%",
+            padding: 2,
+            borderLeft: isMobile ? "none" : "2px solid",
+            borderColor: darkMode ? "#ffffff22" : "#00000022",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <Typography variant="h6">Settings</Typography>
+          <TextField select label="Select Language" value={language} onChange={handleLanguageChange} fullWidth sx={{ marginBottom: 2, bgcolor: "background.paper" }}>
+            {Object.keys(languages).map((lang) => (
+              <MenuItem key={lang} value={lang}>
+                {lang}
+              </MenuItem>
+            ))}
+          </TextField>
+
+          <Typography variant="subtitle1">Input</Typography>
+          <TextField multiline rows={3} value={input} onChange={(e) => setInput(e.target.value)} fullWidth sx={{ marginBottom: 2, bgcolor: "background.paper" }} />
+
+          <Button variant="contained" color="primary" onClick={handleRun} sx={{ marginBottom: 2 }}>
+            Run Code
+          </Button>
+
+          <Typography variant="subtitle1">Output</Typography>
+          <TextField multiline rows={6} value={output} fullWidth InputProps={{ readOnly: true }} sx={{ bgcolor: "background.paper" }} />
         </Box>
       </Box>
     </ThemeProvider>
