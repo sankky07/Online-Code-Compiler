@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import {
   Box,
@@ -9,12 +9,13 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
-import { Brightness4, Brightness7 } from "@mui/icons-material";
+import { Brightness4, Brightness7, FileDownload, ContentCopy, PlayArrow } from "@mui/icons-material";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import CodeMirror from "@uiw/react-codemirror";
 import { java } from "@codemirror/lang-java";
 import { cpp } from "@codemirror/lang-cpp";
 import { python } from "@codemirror/lang-python";
+import { useHotkeys } from "react-hotkeys-hook"; // For keyboard shortcuts
 
 // Default Hello World programs
 const defaultPrograms = {
@@ -23,16 +24,13 @@ const defaultPrograms = {
         System.out.println("Hello, World!");
     }
 }`,
-
   "C++": `#include <iostream>
 using namespace std;
 int main() {
     cout << "Hello, World!" << endl;
     return 0;
 }`,
-
   Python: `print("Hello, World!")`,
-
   C: `#include <stdio.h>
 int main() {
     printf("Hello, World!\\n");
@@ -42,43 +40,45 @@ int main() {
 
 // Supported languages
 const languages = {
-  Java: { id: "java", extension: java() },
-  "C++": { id: "cpp", extension: cpp() },
-  Python: { id: "python", extension: python() },
-  C: { id: "c", extension: cpp() }, // Using C++ highlighting for C
+  Java: { id: "java", extension: java(), fileExt: ".java" },
+  "C++": { id: "cpp", extension: cpp(), fileExt: ".cpp" },
+  Python: { id: "python", extension: python(), fileExt: ".py" },
+  C: { id: "c", extension: cpp(), fileExt: ".c" }, // Using C++ highlighting for C
 };
 
 const Editor = () => {
   const [language, setLanguage] = useState("Java");
-  const [code, setCode] = useState(defaultPrograms["Java"]); // Set default code
+  const [code, setCode] = useState(localStorage.getItem("savedCode") || defaultPrograms["Java"]);
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
-  const [darkMode, setDarkMode] = useState(true); // Default: Dark Mode
+  const [darkMode, setDarkMode] = useState(true);
+  const outputRef = useRef(null);
+
+  // Auto-save code
+  useEffect(() => {
+    localStorage.setItem("savedCode", code);
+  }, [code]);
+
+  // Keyboard Shortcut: Run code with Ctrl + Enter
+  useHotkeys("ctrl+enter", () => handleRun());
 
   // Toggle Dark Mode
   const toggleDarkMode = () => {
     setDarkMode((prevMode) => !prevMode);
   };
 
+  // Handle code execution
   const handleRun = async () => {
     try {
-      const response = await axios.post(
-        "https://emkc.org/api/v2/piston/execute",
-        {
-          language: languages[language].id,
-          version: "*",
-          files: [{ content: code }],
-          stdin: input || "",
-        }
-      );
+      const response = await axios.post("https://emkc.org/api/v2/piston/execute", {
+        language: languages[language].id,
+        version: "*",
+        files: [{ content: code }],
+        stdin: input || "",
+      });
 
       const { run } = response.data;
-      let result = `Output: ${run.stdout || "No output"}`;
-      if (run.stderr) {
-        result += `\nError Details: ${run.stderr}`;
-      }
-
-      setOutput(result);
+      setOutput(run.stdout || run.stderr || "No output");
     } catch (error) {
       console.error("Execution error:", error);
       setOutput("Execution failed.");
@@ -89,143 +89,85 @@ const Editor = () => {
   const handleLanguageChange = (e) => {
     const selectedLang = e.target.value;
     setLanguage(selectedLang);
-    setCode(defaultPrograms[selectedLang]); // Set default Hello World program
+    setCode(defaultPrograms[selectedLang]);
   };
 
-  // Define Light & Dark Themes
+  // Download Code File
+  const handleDownload = () => {
+    const blob = new Blob([code], { type: "text/plain" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `code${languages[language].fileExt}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Copy Output to Clipboard
+  const handleCopyOutput = () => {
+    navigator.clipboard.writeText(output);
+  };
+
+  // Theme Settings
   const theme = createTheme({
     palette: {
       mode: darkMode ? "dark" : "light",
       primary: { main: darkMode ? "#90caf9" : "#1976d2" },
-      background: { default: darkMode ? "#282c34" : "#f5f5f5" },
+      background: { default: darkMode ? "#1e1e1e" : "#f5f5f5" },
       text: { primary: darkMode ? "#ffffff" : "#000000" },
     },
   });
 
   return (
     <ThemeProvider theme={theme}>
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          height: "100vh",
-          bgcolor: "background.default",
-          color: "text.primary",
-        }}
-      >
-        <Box sx={{ display: "flex", flex: 1 }}>
-          {/* Left Side - Code Editor */}
-          <Box sx={{ flex: 1, padding: 2 }}>
-            <Typography variant="h6" sx={{ marginBottom: 1 }}>
-              Code Editor
-            </Typography>
-
-            {/* Code Editor Box */}
-            <Box
-              sx={{
-                borderRadius: 2,
-                border: "1px solid",
-                borderColor: darkMode ? "#ffffff55" : "#00000022",
-                padding: 1,
-                bgcolor: "background.paper",
-                boxShadow: darkMode
-                  ? "0px 4px 10px rgba(255, 255, 255, 0.1)"
-                  : "0px 4px 10px rgba(0, 0, 0, 0.1)",
-              }}
-            >
-              <CodeMirror
-                value={code}
-                height="80vh"
-                theme={darkMode ? "dark" : "light"}
-                extensions={[languages[language].extension]}
-                onChange={(newCode) => setCode(newCode)}
-              />
+      <Box sx={{ display: "flex", height: "100vh", bgcolor: "background.default", color: "text.primary" }}>
+        {/* Code Editor */}
+        <Box sx={{ flex: 2, padding: 2 }}>
+          {/* Dark Mode Toggle & Language Selection */}
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+            <Typography variant="h6">Code Editor</Typography>
+            <Box>
+              <TextField select value={language} onChange={handleLanguageChange} sx={{ width: "120px", mr: 2 }}>
+                {Object.keys(languages).map((lang) => (
+                  <MenuItem key={lang} value={lang}>
+                    {lang}
+                  </MenuItem>
+                ))}
+              </TextField>
+              <Tooltip title="Toggle Dark Mode">
+                <IconButton onClick={toggleDarkMode}>{darkMode ? <Brightness7 /> : <Brightness4 />}</IconButton>
+              </Tooltip>
             </Box>
           </Box>
 
-          {/* Right Side - Input, Output, and Controls */}
-          <Box
-            sx={{
-              width: "30%",
-              padding: 2,
-              borderLeft: "2px solid",
-              borderColor: darkMode ? "#ffffff22" : "#00000022",
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            <Typography variant="h6" sx={{ marginBottom: 1 }}>
-              Settings
-            </Typography>
-
-            {/* Dark Mode Toggle Button */}
-            <Tooltip title="Toggle Dark Mode">
-              <IconButton
-                onClick={toggleDarkMode}
-                sx={{ alignSelf: "flex-end", marginBottom: 2 }}
-              >
-                {darkMode ? <Brightness7 /> : <Brightness4 />}
-              </IconButton>
-            </Tooltip>
-
-            {/* Language Selection */}
-            <TextField
-              select
-              label="Select Language"
-              value={language}
-              onChange={handleLanguageChange}
-              fullWidth
-              variant="outlined"
-              sx={{ marginBottom: 2, bgcolor: "background.paper" }}
-            >
-              {Object.keys(languages).map((lang) => (
-                <MenuItem key={lang} value={lang}>
-                  {lang}
-                </MenuItem>
-              ))}
-            </TextField>
-
-            {/* Input Box */}
-            <Typography variant="subtitle1">Input</Typography>
-            <TextField
-              multiline
-              rows={3}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Enter input here..."
-              fullWidth
-              variant="outlined"
-              sx={{ marginBottom: 2, bgcolor: "background.paper" }}
-            />
-
-            {/* Run Button */}
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleRun}
-              sx={{
-                marginBottom: 2,
-                padding: "10px",
-                fontWeight: "bold",
-                borderRadius: "8px",
-                "&:hover": { backgroundColor: darkMode ? "#1e88e5" : "#1565c0" },
-              }}
-            >
-              Run Code
-            </Button>
-
-            {/* Output Box */}
-            <Typography variant="subtitle1">Output</Typography>
-            <TextField
-              multiline
-              rows={6}
-              value={output}
-              fullWidth
-              variant="outlined"
-              InputProps={{ readOnly: true }}
-              sx={{ bgcolor: "background.paper" }}
-            />
+          {/* Code Editor with Glass Effect */}
+          <Box sx={{ borderRadius: 3, bgcolor: "background.paper", padding: 1.5 }}>
+            <CodeMirror value={code} height="70vh" theme={darkMode ? "dark" : "light"} extensions={[languages[language].extension]} onChange={(newCode) => setCode(newCode)} />
           </Box>
+        </Box>
+
+        {/* Controls & Output */}
+        <Box sx={{ width: "30%", padding: 2, borderLeft: "2px solid", borderColor: darkMode ? "#ffffff22" : "#00000022", display: "flex", flexDirection: "column" }}>
+          <Typography variant="h6">Settings</Typography>
+
+          {/* Input */}
+          <TextField multiline rows={3} value={input} onChange={(e) => setInput(e.target.value)} placeholder="Enter input here..." fullWidth sx={{ my: 2 }} />
+
+          {/* Buttons */}
+          <Box sx={{ display: "flex", gap: 2 }}>
+            <Button variant="contained" color="primary" startIcon={<PlayArrow />} onClick={handleRun}>
+              Run (Ctrl + Enter)
+            </Button>
+            <Tooltip title="Download Code">
+              <IconButton onClick={handleDownload}><FileDownload /></IconButton>
+            </Tooltip>
+          </Box>
+
+          {/* Output */}
+          <TextField multiline rows={6} value={output} fullWidth inputRef={outputRef} InputProps={{ readOnly: true }} sx={{ my: 2 }} />
+          <Button variant="outlined" color="secondary" startIcon={<ContentCopy />} onClick={handleCopyOutput}>
+            Copy Output
+          </Button>
         </Box>
       </Box>
     </ThemeProvider>
