@@ -99,8 +99,9 @@ Create a new branch (git checkout -b feature-name).
 Commit changes (git commit -m "Added new feature").
 Push the branch (git push origin feature-name).
 Create a Pull Request.
-License 📝
-This project is open-source under the MIT License.
 
-💡 Made with ❤️ by [Sanket]
-Let me know if you need any modifications! 🚀🔥
+
+## 📜 License & Copyright  
+This project is licensed under the Apache 2.0 License.  
+© 2025 [Sanket Sahu]. All rights reserved.  
+Unauthorized copying, modification, or redistribution without proper attribution is strictly prohibited.  
