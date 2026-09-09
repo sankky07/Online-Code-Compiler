@@ -72,27 +72,49 @@ const Editor = () => {
   const handleThemeChange = (event) => setTheme(event.target.value);
 
   // Run Code using Piston API
-  const handleRun = async () => {
-    try {
-      const response = await axios.post("https://emkc.org/api/v2/piston/execute", {
-        language: languages[language].id,
-        version: "*",
-        files: [{ content: code }],
-        stdin: input || "",
-      });
+ const handleRun = async () => {
+  setOutput("Running...");
 
-      const { run } = response.data;
-      let result = `Output: ${run.stdout || "No output"}`;
-      if (run.stderr) {
-        result += `\nError Details: ${run.stderr}`;
+  try {
+    const response = await axios.post(
+      "https://online-code-compiler-ljop.onrender.com/execute",
+      {
+        code,
+        language,
+        input: input || "",
       }
+    );
 
-      setOutput(result);
-    } catch (error) {
-      console.error("Execution error:", error);
-      setOutput("Execution failed.");
+    const { output, errorDetails } = response.data;
+
+    let result = `Output:\n${output || "No output"}`;
+
+    if (errorDetails) {
+      result += `\n\nError:\n${errorDetails}`;
     }
-  };
+
+    setOutput(result);
+  } catch (error) {
+    console.error("Execution error:", error);
+
+    if (error.response) {
+      setOutput(
+        `Backend error (${error.response.status}):\n${
+          error.response.data?.errorDetails ||
+          error.response.data?.error ||
+          "Unknown server error"
+        }`
+      );
+    } else if (error.request) {
+      setOutput(
+        "Could not connect to the backend.\n\n" +
+        "Please make sure the Render backend is running."
+      );
+    } else {
+      setOutput(`Execution error:\n${error.message}`);
+    }
+  }
+};
 
   // Handle Language Change
   const handleLanguageChange = (e) => {
