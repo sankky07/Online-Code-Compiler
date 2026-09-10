@@ -125,8 +125,7 @@ const getStatusType = (status) => {
     return "default";
   }
 
-  const value =
-    status.toLowerCase();
+  const value = status.toLowerCase();
 
   if (value === "accepted") {
     return "success";
@@ -208,9 +207,11 @@ const Editor = () => {
   const [panelWidth, setPanelWidth] =
     useState(380);
 
-  const outputRef = useRef(null);
+  const outputRef =
+    useRef(null);
 
-  const resizeRef = useRef(null);
+  const resizeState =
+    useRef(null);
 
   /* =========================
      LOAD SAVED STATE
@@ -288,7 +289,7 @@ const Editor = () => {
       }
     } catch (error) {
       console.error(
-        "Failed to restore saved code:",
+        "Failed to restore saved state:",
         error
       );
     }
@@ -299,45 +300,37 @@ const Editor = () => {
   ========================= */
 
   useEffect(() => {
-    setSaveState(
-      "Saving..."
-    );
+    setSaveState("Saving...");
 
-    const timer = setTimeout(
-      () => {
-        try {
-          localStorage.setItem(
-            STORAGE_KEY,
-            JSON.stringify({
-              language,
-              code,
-              input,
-              darkMode,
-              theme,
-              fontSize,
-              wordWrap,
-            })
-          );
+    const timer = setTimeout(() => {
+      try {
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({
+            language,
+            code,
+            input,
+            darkMode,
+            theme,
+            fontSize,
+            wordWrap,
+          })
+        );
 
-          setSaveState(
-            "Saved"
-          );
-        } catch (error) {
-          console.error(
-            "Autosave failed:",
-            error
-          );
+        setSaveState("Saved");
+      } catch (error) {
+        console.error(
+          "Autosave failed:",
+          error
+        );
 
-          setSaveState(
-            "Not saved"
-          );
-        }
-      },
-      500
-    );
+        setSaveState("Not saved");
+      }
+    }, 500);
 
-    return () =>
+    return () => {
       clearTimeout(timer);
+    };
   }, [
     language,
     code,
@@ -349,7 +342,7 @@ const Editor = () => {
   ]);
 
   /* =========================
-     MUI THEME
+     THEME
   ========================= */
 
   const muiTheme = useMemo(
@@ -399,7 +392,7 @@ const Editor = () => {
     }, []);
 
   /* =========================
-     LANGUAGE CHANGE
+     LANGUAGE
   ========================= */
 
   const handleLanguageChange =
@@ -427,9 +420,7 @@ const Editor = () => {
   const handleRun =
     useCallback(async () => {
       if (!code.trim()) {
-        setStatus(
-          "No Code"
-        );
+        setStatus("No Code");
 
         setOutput(
           "Please enter some code before running."
@@ -682,78 +673,67 @@ const Editor = () => {
   ========================= */
 
   const startResize =
-    useCallback(
-      (event) => {
-        event.preventDefault();
+    (event) => {
+      event.preventDefault();
 
-        resizeRef.current = {
-          startX:
-            event.clientX,
+      resizeState.current = {
+        startX: event.clientX,
+        startWidth: panelWidth,
+      };
 
-          startWidth:
-            panelWidth,
-        };
+      document.body.style.cursor =
+        "col-resize";
 
-        document.body.style.cursor =
-          "col-resize";
+      document.body.style.userSelect =
+        "none";
 
-        document.body.style.userSelect =
-          "none";
+      window.addEventListener(
+        "mousemove",
+        handleResize
+      );
 
-        window.addEventListener(
-          "mousemove",
-          handleResize
-        );
-
-        window.addEventListener(
-          "mouseup",
-          stopResize
-        );
-      },
-      [panelWidth]
-    );
+      window.addEventListener(
+        "mouseup",
+        stopResize
+      );
+    };
 
   /* =========================
      RESIZE MOVE
   ========================= */
 
   const handleResize =
-    useCallback(
-      (event) => {
-        if (
-          !resizeRef.current
-        ) {
-          return;
-        }
+    (event) => {
+      if (!resizeState.current) {
+        return;
+      }
 
-        const difference =
-          resizeRef.current.startX -
-          event.clientX;
+      const difference =
+        resizeState.current.startX -
+        event.clientX;
 
-        const newWidth =
-          resizeRef.current.startWidth +
-          difference;
+      const newWidth =
+        resizeState.current.startWidth +
+        difference;
 
-        setPanelWidth(
-          Math.min(
-            Math.max(
-              newWidth,
-              300
-            ),
-            600
-          )
-        );
-      },
-      []
-    );
+      setPanelWidth(
+        Math.min(
+          Math.max(
+            newWidth,
+            300
+          ),
+          600
+        )
+      );
+    };
 
   /* =========================
      RESIZE STOP
   ========================= */
 
   const stopResize =
-    useCallback(() => {
-      resizeRef.current =
+    () => {
+      resizeState.current =
         null;
 
       document.body.style.cursor =
@@ -771,7 +751,7 @@ const Editor = () => {
         "mouseup",
         stopResize
       );
-    }, [handleResize]);
+    };
 
   /* =========================
      RESIZE CLEANUP
@@ -779,9 +759,26 @@ const Editor = () => {
 
   useEffect(() => {
     return () => {
-      stopResize();
+      resizeState.current =
+        null;
+
+      document.body.style.cursor =
+        "";
+
+      document.body.style.userSelect =
+        "";
+
+      window.removeEventListener(
+        "mousemove",
+        handleResize
+      );
+
+      window.removeEventListener(
+        "mouseup",
+        stopResize
+      );
     };
-  }, [stopResize]);
+  }, []);
 
   /* =========================
      KEYBOARD SHORTCUTS
@@ -837,7 +834,7 @@ const Editor = () => {
   ]);
 
   /* =========================
-     TERMINAL AUTO SCROLL
+     AUTO SCROLL
   ========================= */
 
   useEffect(() => {
@@ -1257,7 +1254,7 @@ const Editor = () => {
 
             </Box>
 
-            {/* RUN CONTROLS */}
+            {/* RUN */}
 
             <Box className="run-controls">
 
@@ -1298,7 +1295,7 @@ const Editor = () => {
 
             </Box>
 
-            {/* TERMINAL HEADER */}
+            {/* TERMINAL */}
 
             <Box className="result-header">
 
