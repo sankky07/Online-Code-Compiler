@@ -621,3 +621,122 @@ body {
     padding: 5px;
   }
 }
+/* =========================
+   CODE TABS
+========================= */
+
+.code-tabs {
+  height: 38px;
+  min-height: 38px;
+  display: flex;
+  align-items: stretch;
+  overflow-x: auto;
+  overflow-y: hidden;
+  background: #f3f4f6;
+  border-bottom: 1px solid #d9dee7;
+}
+
+.code-tabs::-webkit-scrollbar {
+  height: 3px;
+}
+
+.code-tab {
+  position: relative;
+  min-width: 105px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border-right: 1px solid #d9dee7;
+  color: #6b7280;
+  font-size: 11px;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.code-tab:hover {
+  background: #e9edf2;
+  color: #374151;
+}
+
+.code-tab.active {
+  background: #ffffff;
+  color: #111827;
+  font-weight: 600;
+}
+
+.code-tab.active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: #1976d2;
+}
+
+.tab-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+  flex-shrink: 0;
+}
+
+.tab-name {
+  white-space: nowrap;
+}
+
+.tab-close {
+  margin-left: auto;
+  opacity: 0;
+  font-size: 13px !important;
+  transition: opacity 0.15s ease;
+}
+
+.code-tab:hover .tab-close,
+.code-tab.active .tab-close {
+  opacity: 0.65;
+}
+
+/* DARK MODE TABS */
+
+.dark-mode .code-tabs {
+  background: #161b22;
+  border-color: #30363d;
+}
+
+.dark-mode .code-tab {
+  color: #8b949e;
+  border-color: #30363d;
+}
+
+.dark-mode .code-tab:hover {
+  background: #21262d;
+  color: #e6edf3;
+}
+
+.dark-mode .code-tab.active {
+  background: #0d1117;
+  color: #e6edf3;
+}
+
+.dark-mode .code-tab.active::after {
+  background: #58a6ff;
+}
+
+/* MOBILE */
+
+@media (max-width: 600px) {
+  .code-tab {
+    min-width: 90px;
+    padding: 0 9px;
+  }
+
+  .tab-name {
+    font-size: 10px;
+  }
+}
