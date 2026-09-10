@@ -363,10 +363,6 @@ backend/.env
 
 ---
 
-```markdown
-## 📸 Screenshots
-
-```markdown
 ## 📸 Screenshots
 
 ### 🌙 Dark Mode
