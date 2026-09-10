@@ -25,6 +25,7 @@ import {
   Brightness4,
   Brightness7,
   Clear,
+  Close,
   ContentCopy,
   Download,
   Fullscreen,
@@ -155,9 +156,8 @@ const Editor = () => {
   const [language, setLanguage] =
     useState("Java");
 
-  const [code, setCode] = useState(
-    defaultPrograms.Java
-  );
+  const [codeFiles, setCodeFiles] =
+    useState(defaultPrograms);
 
   const [input, setInput] =
     useState("");
@@ -219,9 +219,8 @@ const Editor = () => {
   const resizeStartWidth =
     useRef(380);
 
-  /* =========================
-     THEME
-  ========================= */
+  const code =
+    codeFiles[language] || "";
 
   const muiTheme = useMemo(
     () =>
@@ -256,7 +255,7 @@ const Editor = () => {
   );
 
   /* =========================
-     LOAD SAVED SETTINGS
+     RESTORE SAVED STATE
   ========================= */
 
   useEffect(() => {
@@ -283,10 +282,22 @@ const Editor = () => {
       }
 
       if (
+        parsed.codeFiles &&
+        typeof parsed.codeFiles ===
+          "object"
+      ) {
+        setCodeFiles({
+          ...defaultPrograms,
+          ...parsed.codeFiles,
+        });
+      } else if (
         typeof parsed.code ===
         "string"
       ) {
-        setCode(parsed.code);
+        setCodeFiles({
+          ...defaultPrograms,
+          Java: parsed.code,
+        });
       }
 
       if (
@@ -350,7 +361,7 @@ const Editor = () => {
           STORAGE_KEY,
           JSON.stringify({
             language,
-            code,
+            codeFiles,
             input,
             darkMode,
             theme,
@@ -377,7 +388,7 @@ const Editor = () => {
     };
   }, [
     language,
-    code,
+    codeFiles,
     input,
     darkMode,
     theme,
@@ -386,7 +397,7 @@ const Editor = () => {
   ]);
 
   /* =========================
-     CLEAR RESULTS
+     RESULTS
   ========================= */
 
   const clearResults =
@@ -400,7 +411,7 @@ const Editor = () => {
     }, []);
 
   /* =========================
-     LANGUAGE CHANGE
+     LANGUAGE / TAB CHANGE
   ========================= */
 
   const handleLanguageChange =
@@ -412,13 +423,17 @@ const Editor = () => {
         selectedLanguage
       );
 
-      setCode(
-        defaultPrograms[
-          selectedLanguage
-        ]
-      );
-
       clearResults();
+    };
+
+  const handleCodeChange =
+    (value) => {
+      setCodeFiles(
+        (previous) => ({
+          ...previous,
+          [language]: value,
+        })
+      );
     };
 
   /* =========================
@@ -427,7 +442,10 @@ const Editor = () => {
 
   const handleRun =
     useCallback(async () => {
-      if (!code.trim()) {
+      const currentCode =
+        codeFiles[language] || "";
+
+      if (!currentCode.trim()) {
         setStatus("No Code");
 
         setOutput(
@@ -453,7 +471,7 @@ const Editor = () => {
           await axios.post(
             `${BACKEND_URL}/execute`,
             {
-              code,
+              code: currentCode,
               language,
               input: input || "",
             },
@@ -522,13 +540,13 @@ const Editor = () => {
         setIsRunning(false);
       }
     }, [
-      code,
+      codeFiles,
       language,
       input,
     ]);
 
   /* =========================
-     COPY CODE
+     COPY
   ========================= */
 
   const handleCopyCode =
@@ -550,10 +568,6 @@ const Editor = () => {
         );
       }
     };
-
-  /* =========================
-     COPY OUTPUT
-  ========================= */
 
   const handleCopyOutput =
     async () => {
@@ -631,8 +645,14 @@ const Editor = () => {
 
   const handleResetCode =
     () => {
-      setCode(
-        defaultPrograms[language]
+      setCodeFiles(
+        (previous) => ({
+          ...previous,
+          [language]:
+            defaultPrograms[
+              language
+            ],
+        })
       );
 
       clearResults();
@@ -761,10 +781,6 @@ const Editor = () => {
       );
     };
 
-  /* =========================
-     CLEANUP RESIZE
-  ========================= */
-
   useEffect(() => {
     return () => {
       document.body.style.cursor =
@@ -858,7 +874,7 @@ const Editor = () => {
   ]);
 
   /* =========================
-     STATISTICS
+     STATS
   ========================= */
 
   const lineCount =
@@ -874,28 +890,25 @@ const Editor = () => {
     Boolean(errorOutput) ||
     Boolean(compileOutput);
 
-  /* =========================
-     UI
-  ========================= */
-
   return (
     <ThemeProvider
       theme={muiTheme}
     >
       <Box
-  className={`compiler-app ${
-    darkMode ? "dark-mode" : "light-mode"
-  } ${
-    isFullscreen ? "compiler-fullscreen" : ""
-  }`}
->
-
-        {/* HEADER */}
+        className={`compiler-app ${
+          darkMode
+            ? "dark-mode"
+            : "light-mode"
+        } ${
+          isFullscreen
+            ? "compiler-fullscreen"
+            : ""
+        }`}
+      >
+        {/* ================= HEADER ================= */}
 
         <Box className="compiler-header">
-
           <Box className="brand-section">
-
             <Box className="brand-icon">
               {"</>"}
             </Box>
@@ -909,11 +922,9 @@ const Editor = () => {
                 Write • Run • Experiment
               </Typography>
             </Box>
-
           </Box>
 
           <Box className="header-controls">
-
             <Select
               value={language}
               onChange={
@@ -982,32 +993,24 @@ const Editor = () => {
                 )}
               </IconButton>
             </Tooltip>
-
           </Box>
-
         </Box>
 
-        {/* MAIN */}
+        {/* ================= MAIN ================= */}
 
         <Box className="compiler-main">
 
-          {/* EDITOR */}
+          {/* ================= EDITOR ================= */}
 
           <Box className="editor-panel">
 
             <Box className="panel-header">
 
               <Box className="panel-title">
-
                 <span className="status-dot" />
 
                 <Typography>
-                  main.
-                  {
-                    languages[
-                      language
-                    ].extensionName
-                  }
+                  Code Files
                 </Typography>
 
                 <Chip
@@ -1018,11 +1021,9 @@ const Editor = () => {
                   variant="outlined"
                   className="save-chip"
                 />
-
               </Box>
 
               <Box className="editor-actions">
-
                 <Tooltip
                   title={
                     wordWrap
@@ -1124,12 +1125,65 @@ const Editor = () => {
                     )}
                   </IconButton>
                 </Tooltip>
-
               </Box>
-
             </Box>
 
-            {/* CODE */}
+            {/* ================= TABS ================= */}
+
+            <Box className="code-tabs">
+              {Object.keys(
+                languages
+              ).map(
+                (lang) => (
+                  <Box
+                    key={lang}
+                    className={`code-tab ${
+                      language ===
+                      lang
+                        ? "active"
+                        : ""
+                    }`}
+                    onClick={() => {
+                      if (
+                        language !==
+                        lang
+                      ) {
+                        setLanguage(
+                          lang
+                        );
+                        clearResults();
+                      }
+                    }}
+                  >
+                    <span className="tab-dot" />
+
+                    <span className="tab-name">
+                      main.
+                      {
+                        languages[
+                          lang
+                        ].extensionName
+                      }
+                    </span>
+
+                    {language ===
+                      lang && (
+                      <Close
+                        className="tab-close"
+                        fontSize="inherit"
+                        onClick={(
+                          event
+                        ) => {
+                          event.stopPropagation();
+                        }}
+                      />
+                    )}
+                  </Box>
+                )
+              )}
+            </Box>
+
+            {/* ================= EDITOR ================= */}
 
             <Box
               className={`code-editor ${
@@ -1153,8 +1207,8 @@ const Editor = () => {
                     language
                   ].extension,
                 ]}
-                onChange={(value) =>
-                  setCode(value)
+                onChange={
+                  handleCodeChange
                 }
                 basicSetup={{
                   lineNumbers: true,
@@ -1172,12 +1226,10 @@ const Editor = () => {
               />
             </Box>
 
-            {/* FOOTER */}
+            {/* ================= FOOTER ================= */}
 
             <Box className="editor-footer">
-
               <Box className="footer-left">
-
                 <Typography variant="caption">
                   {language}
                 </Typography>
@@ -1199,11 +1251,9 @@ const Editor = () => {
                 <Typography variant="caption">
                   {characterCount} chars
                 </Typography>
-
               </Box>
 
               <Box className="footer-right">
-
                 <Typography variant="caption">
                   Ctrl + Enter
                 </Typography>
@@ -1211,14 +1261,11 @@ const Editor = () => {
                 <Typography variant="caption">
                   Run
                 </Typography>
-
               </Box>
-
             </Box>
-
           </Box>
 
-          {/* RESIZE */}
+          {/* ================= RESIZE ================= */}
 
           <Box
             className="resize-handle"
@@ -1227,7 +1274,7 @@ const Editor = () => {
             }
           />
 
-          {/* SIDE PANEL */}
+          {/* ================= SIDE PANEL ================= */}
 
           <Box
             className="side-panel"
@@ -1240,9 +1287,7 @@ const Editor = () => {
             {/* INPUT */}
 
             <Box className="side-section">
-
               <Box className="section-header">
-
                 <Typography className="section-title">
                   Input
                 </Typography>
@@ -1253,7 +1298,6 @@ const Editor = () => {
                 >
                   stdin
                 </Typography>
-
               </Box>
 
               <TextField
@@ -1269,13 +1313,11 @@ const Editor = () => {
                 }
                 placeholder="Enter program input..."
               />
-
             </Box>
 
             {/* RUN */}
 
             <Box className="run-controls">
-
               <Button
                 variant="contained"
                 startIcon={
@@ -1310,15 +1352,12 @@ const Editor = () => {
               >
                 Clear
               </Button>
-
             </Box>
 
-            {/* TERMINAL HEADER */}
+            {/* TERMINAL */}
 
             <Box className="result-header">
-
               <Box className="terminal-title">
-
                 <Typography className="section-title">
                   Terminal
                 </Typography>
@@ -1332,7 +1371,6 @@ const Editor = () => {
                     )}
                   />
                 )}
-
               </Box>
 
               {hasResult && (
@@ -1347,20 +1385,15 @@ const Editor = () => {
                   </IconButton>
                 </Tooltip>
               )}
-
             </Box>
-
-            {/* TERMINAL */}
 
             <Box
               className="output-container"
               ref={outputRef}
             >
-
               {!hasResult &&
                 !isRunning && (
                   <Box className="empty-output">
-
                     <Box className="terminal-symbol">
                       {">_"}
                     </Box>
@@ -1372,13 +1405,11 @@ const Editor = () => {
                     <Typography variant="caption">
                       Run your program to see the output
                     </Typography>
-
                   </Box>
                 )}
 
               {isRunning && (
                 <Box className="running-state">
-
                   <Box className="spinner" />
 
                   <Typography>
@@ -1389,13 +1420,11 @@ const Editor = () => {
                   <Typography variant="caption">
                     Judge0 is processing your program
                   </Typography>
-
                 </Box>
               )}
 
               {output && (
                 <Box className="output-block">
-
                   <Typography className="output-label">
                     STDOUT
                   </Typography>
@@ -1403,13 +1432,11 @@ const Editor = () => {
                   <pre>
                     {output}
                   </pre>
-
                 </Box>
               )}
 
               {compileOutput && (
                 <Box className="output-block error-block">
-
                   <Typography className="output-label">
                     COMPILATION ERROR
                   </Typography>
@@ -1417,13 +1444,11 @@ const Editor = () => {
                   <pre>
                     {compileOutput}
                   </pre>
-
                 </Box>
               )}
 
               {errorOutput && (
                 <Box className="output-block error-block">
-
                   <Typography className="output-label">
                     STDERR
                   </Typography>
@@ -1431,10 +1456,8 @@ const Editor = () => {
                   <pre>
                     {errorOutput}
                   </pre>
-
                 </Box>
               )}
-
             </Box>
 
             {/* METRICS */}
@@ -1442,7 +1465,6 @@ const Editor = () => {
             {(executionTime ||
               memoryUsage) && (
               <Box className="metrics">
-
                 {executionTime && (
                   <Typography variant="caption">
                     ⚡{" "}
@@ -1456,14 +1478,10 @@ const Editor = () => {
                     {memoryUsage} KB
                   </Typography>
                 )}
-
               </Box>
             )}
-
           </Box>
-
         </Box>
-
       </Box>
     </ThemeProvider>
   );
