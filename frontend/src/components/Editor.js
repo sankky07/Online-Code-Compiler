@@ -12,6 +12,7 @@ import {
   Box,
   Button,
   Chip,
+  Divider,
   IconButton,
   MenuItem,
   Select,
@@ -26,8 +27,13 @@ import {
   Clear,
   ContentCopy,
   Download,
+  Fullscreen,
+  FullscreenExit,
   PlayArrow,
   RestartAlt,
+  ZoomIn,
+  ZoomOut,
+  WrapText,
 } from "@mui/icons-material";
 
 import {
@@ -50,6 +56,8 @@ import {
 
 const BACKEND_URL =
   "https://online-code-compiler-ljop.onrender.com";
+
+const STORAGE_KEY = "online-code-compiler";
 
 const defaultPrograms = {
   Java: `public class Main {
@@ -112,15 +120,11 @@ const themes = {
 };
 
 const getStatusType = (status) => {
-  if (!status) {
-    return "default";
-  }
+  if (!status) return "default";
 
   const value = status.toLowerCase();
 
-  if (value === "accepted") {
-    return "success";
-  }
+  if (value === "accepted") return "success";
 
   if (
     value.includes("error") ||
@@ -176,13 +180,128 @@ const Editor = () => {
   const [copied, setCopied] =
     useState(false);
 
+  const [fontSize, setFontSize] =
+    useState(14);
+
+  const [wordWrap, setWordWrap] =
+    useState(false);
+
+  const [isFullscreen, setIsFullscreen] =
+    useState(false);
+
+  const [saveState, setSaveState] =
+    useState("Saved");
+
+  const [panelWidth, setPanelWidth] =
+    useState(380);
+
   const outputRef = useRef(null);
+  const resizeRef = useRef(null);
+
+  /* =========================
+     LOAD SAVED STATE
+  ========================= */
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(
+        STORAGE_KEY
+      );
+
+      if (!saved) return;
+
+      const parsed = JSON.parse(saved);
+
+      if (parsed.language) {
+        setLanguage(parsed.language);
+      }
+
+      if (parsed.code) {
+        setCode(parsed.code);
+      }
+
+      if (parsed.input !== undefined) {
+        setInput(parsed.input);
+      }
+
+      if (parsed.darkMode !== undefined) {
+        setDarkMode(parsed.darkMode);
+      }
+
+      if (parsed.theme) {
+        setTheme(parsed.theme);
+      }
+
+      if (parsed.fontSize) {
+        setFontSize(parsed.fontSize);
+      }
+
+      if (parsed.wordWrap !== undefined) {
+        setWordWrap(parsed.wordWrap);
+      }
+    } catch (error) {
+      console.error(
+        "Failed to restore saved code:",
+        error
+      );
+    }
+  }, []);
+
+  /* =========================
+     AUTOSAVE
+  ========================= */
+
+  useEffect(() => {
+    setSaveState("Saving...");
+
+    const timer = setTimeout(() => {
+      try {
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({
+            language,
+            code,
+            input,
+            darkMode,
+            theme,
+            fontSize,
+            wordWrap,
+          })
+        );
+
+        setSaveState("Saved");
+      } catch (error) {
+        console.error(
+          "Autosave failed:",
+          error
+        );
+
+        setSaveState("Not saved");
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [
+    language,
+    code,
+    input,
+    darkMode,
+    theme,
+    fontSize,
+    wordWrap,
+  ]);
+
+  /* =========================
+     THEME
+  ========================= */
 
   const muiTheme = useMemo(
     () =>
       createTheme({
         palette: {
-          mode: darkMode ? "dark" : "light",
+          mode: darkMode
+            ? "dark"
+            : "light",
 
           primary: {
             main: darkMode
@@ -208,6 +327,10 @@ const Editor = () => {
     [darkMode]
   );
 
+  /* =========================
+     CLEAR RESULTS
+  ========================= */
+
   const clearResults = useCallback(() => {
     setOutput("");
     setErrorOutput("");
@@ -217,7 +340,13 @@ const Editor = () => {
     setMemoryUsage(null);
   }, []);
 
-  const handleLanguageChange = (event) => {
+  /* =========================
+     LANGUAGE
+  ========================= */
+
+  const handleLanguageChange = (
+    event
+  ) => {
     const selectedLanguage =
       event.target.value;
 
@@ -230,93 +359,105 @@ const Editor = () => {
     clearResults();
   };
 
-  const handleRun = useCallback(async () => {
-    if (!code.trim()) {
-      setStatus("No Code");
+  /* =========================
+     RUN CODE
+  ========================= */
 
-      setOutput(
-        "Please enter some code before running."
-      );
+  const handleRun = useCallback(
+    async () => {
+      if (!code.trim()) {
+        setStatus("No Code");
 
-      return;
-    }
-
-    setIsRunning(true);
-
-    setStatus("Running");
-
-    setOutput("");
-    setErrorOutput("");
-    setCompileOutput("");
-
-    setExecutionTime(null);
-    setMemoryUsage(null);
-
-    try {
-      const response = await axios.post(
-        `${BACKEND_URL}/execute`,
-        {
-          code,
-          language,
-          input: input || "",
-        },
-        {
-          timeout: 60000,
-        }
-      );
-
-      const data = response.data;
-
-      setStatus(
-        data.status || "Finished"
-      );
-
-      setOutput(
-        data.output || ""
-      );
-
-      setErrorOutput(
-        data.error || ""
-      );
-
-      setCompileOutput(
-        data.compileOutput || ""
-      );
-
-      setExecutionTime(
-        data.executionTime
-      );
-
-      setMemoryUsage(
-        data.memoryUsage
-      );
-    } catch (error) {
-      console.error(
-        "Execution error:",
-        error
-      );
-
-      setStatus("Backend Error");
-
-      if (error.response) {
-        setErrorOutput(
-          error.response.data?.error ||
-            `Backend error (${error.response.status})`
+        setOutput(
+          "Please enter some code before running."
         );
-      } else if (error.request) {
-        setErrorOutput(
-          "Could not connect to the backend. Please try again."
-        );
-      } else {
-        setErrorOutput(
-          error.message ||
-            "Unknown execution error."
-        );
+
+        return;
       }
-    } finally {
-      setIsRunning(false);
-    }
-  }, [code, language, input]);
+
+      setIsRunning(true);
+
+      setStatus("Running");
+
+      setOutput("");
+      setErrorOutput("");
+      setCompileOutput("");
+
+      setExecutionTime(null);
+      setMemoryUsage(null);
+
+      try {
+        const response =
+          await axios.post(
+            `${BACKEND_URL}/execute`,
+            {
+              code,
+              language,
+              input: input || "",
+            },
+            {
+              timeout: 60000,
+            }
+          );
+
+        const data = response.data;
+
+        setStatus(
+          data.status || "Finished"
+        );
+
+        setOutput(
+          data.output || ""
+        );
+
+        setErrorOutput(
+          data.error || ""
+        );
+
+        setCompileOutput(
+          data.compileOutput || ""
+        );
+
+        setExecutionTime(
+          data.executionTime
+        );
+
+        setMemoryUsage(
+          data.memoryUsage
+        );
+      } catch (error) {
+        console.error(
+          "Execution error:",
+          error
+        );
+
+        setStatus("Backend Error");
+
+        if (error.response) {
+          setErrorOutput(
+            error.response.data?.error ||
+              `Backend error (${error.response.status})`
+          );
+        } else if (error.request) {
+          setErrorOutput(
+            "Could not connect to the backend. Please try again."
+          );
+        } else {
+          setErrorOutput(
+            error.message ||
+              "Unknown execution error."
+          );
+        }
+      } finally {
+        setIsRunning(false);
+      }
+    },
+    [code, language, input]
+  );
+
+  /* =========================
+     COPY CODE
+  ========================= */
 
   const handleCopyCode = async () => {
     try {
@@ -337,6 +478,10 @@ const Editor = () => {
     }
   };
 
+  /* =========================
+     COPY OUTPUT
+  ========================= */
+
   const handleCopyOutput = async () => {
     const combinedOutput = [
       output,
@@ -346,9 +491,7 @@ const Editor = () => {
       .filter(Boolean)
       .join("\n\n");
 
-    if (!combinedOutput) {
-      return;
-    }
+    if (!combinedOutput) return;
 
     try {
       await navigator.clipboard.writeText(
@@ -361,6 +504,10 @@ const Editor = () => {
       );
     }
   };
+
+  /* =========================
+     DOWNLOAD
+  ========================= */
 
   const handleDownloadCode = () => {
     const blob = new Blob(
@@ -390,6 +537,10 @@ const Editor = () => {
     URL.revokeObjectURL(url);
   };
 
+  /* =========================
+     RESET
+  ========================= */
+
   const handleResetCode = () => {
     setCode(
       defaultPrograms[language]
@@ -397,6 +548,116 @@ const Editor = () => {
 
     clearResults();
   };
+
+  /* =========================
+     FULLSCREEN
+  ========================= */
+
+  const toggleFullscreen = () => {
+    setIsFullscreen(
+      (previous) => !previous
+    );
+  };
+
+  /* =========================
+     FONT SIZE
+  ========================= */
+
+  const increaseFontSize = () => {
+    setFontSize(
+      (size) => Math.min(size + 1, 24)
+    );
+  };
+
+  const decreaseFontSize = () => {
+    setFontSize(
+      (size) => Math.max(size - 1, 10)
+    );
+  };
+
+  /* =========================
+     RESIZABLE PANEL
+  ========================= */
+
+  const startResize = (event) => {
+    event.preventDefault();
+
+    resizeRef.current = {
+      startX: event.clientX,
+      startWidth: panelWidth,
+    };
+
+    document.body.style.cursor =
+      "col-resize";
+
+    document.body.style.userSelect =
+      "none";
+
+    window.addEventListener(
+      "mousemove",
+      handleResize
+    );
+
+    window.addEventListener(
+      "mouseup",
+      stopResize
+    );
+  };
+
+  const handleResize = (event) => {
+    if (!resizeRef.current) return;
+
+    const difference =
+      resizeRef.current.startX -
+      event.clientX;
+
+    const newWidth =
+      resizeRef.current.startWidth +
+      difference;
+
+    setPanelWidth(
+      Math.min(
+        Math.max(newWidth, 300),
+        600
+      )
+    );
+  };
+
+  const stopResize = () => {
+    resizeRef.current = null;
+
+    document.body.style.cursor = "";
+
+    document.body.style.userSelect = "";
+
+    window.removeEventListener(
+      "mousemove",
+      handleResize
+    );
+
+    window.removeEventListener(
+      "mouseup",
+      stopResize
+    );
+  };
+
+  useEffect(() => {
+    return () => {
+      window.removeEventListener(
+        "mousemove",
+        handleResize
+      );
+
+      window.removeEventListener(
+        "mouseup",
+        stopResize
+      );
+    };
+  }, []);
+
+  /* =========================
+     KEYBOARD SHORTCUT
+  ========================= */
 
   useEffect(() => {
     const handleKeyboardShortcut = (
@@ -413,6 +674,22 @@ const Editor = () => {
           handleRun();
         }
       }
+
+      if (
+        (event.ctrlKey ||
+          event.metaKey) &&
+        event.key === "s"
+      ) {
+        event.preventDefault();
+      }
+
+      if (
+        event.key === "F11"
+      ) {
+        event.preventDefault();
+
+        toggleFullscreen();
+      }
     };
 
     window.addEventListener(
@@ -426,7 +703,14 @@ const Editor = () => {
         handleKeyboardShortcut
       );
     };
-  }, [handleRun, isRunning]);
+  }, [
+    handleRun,
+    isRunning,
+  ]);
+
+  /* =========================
+     AUTO SCROLL TERMINAL
+  ========================= */
 
   useEffect(() => {
     if (outputRef.current) {
@@ -439,6 +723,18 @@ const Editor = () => {
     compileOutput,
   ]);
 
+  /* =========================
+     CODE STATS
+  ========================= */
+
+  const lineCount =
+    code.length === 0
+      ? 0
+      : code.split("\n").length;
+
+  const characterCount =
+    code.length;
+
   const hasResult =
     Boolean(output) ||
     Boolean(errorOutput) ||
@@ -446,9 +742,17 @@ const Editor = () => {
 
   return (
     <ThemeProvider theme={muiTheme}>
-      <Box className="compiler-app">
+      <Box
+        className={`compiler-app ${
+          isFullscreen
+            ? "compiler-fullscreen"
+            : ""
+        }`}
+      >
 
-        {/* HEADER */}
+        {/* =========================
+            HEADER
+        ========================= */}
 
         <Box className="compiler-header">
 
@@ -502,16 +806,16 @@ const Editor = () => {
               size="small"
               className="theme-select"
             >
-              {Object.keys(themes).map(
-                (themeName) => (
-                  <MenuItem
-                    key={themeName}
-                    value={themeName}
-                  >
-                    {themeName}
-                  </MenuItem>
-                )
-              )}
+              {Object.keys(
+                themes
+              ).map((themeName) => (
+                <MenuItem
+                  key={themeName}
+                  value={themeName}
+                >
+                  {themeName}
+                </MenuItem>
+              ))}
             </Select>
 
             <Tooltip
@@ -541,11 +845,15 @@ const Editor = () => {
 
         </Box>
 
-        {/* MAIN */}
+        {/* =========================
+            MAIN
+        ========================= */}
 
         <Box className="compiler-main">
 
-          {/* CODE EDITOR */}
+          {/* =========================
+              EDITOR
+          ========================= */}
 
           <Box className="editor-panel">
 
@@ -564,9 +872,58 @@ const Editor = () => {
                   }
                 </Typography>
 
+                <Chip
+                  label={saveState}
+                  size="small"
+                  variant="outlined"
+                  className="save-chip"
+                />
+
               </Box>
 
               <Box className="editor-actions">
+
+                <Tooltip
+                  title={
+                    wordWrap
+                      ? "Disable word wrap"
+                      : "Enable word wrap"
+                  }
+                >
+                  <IconButton
+                    size="small"
+                    onClick={() =>
+                      setWordWrap(
+                        (value) =>
+                          !value
+                      )
+                    }
+                  >
+                    <WrapText fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+
+                <Tooltip title="Decrease font size">
+                  <IconButton
+                    size="small"
+                    onClick={
+                      decreaseFontSize
+                    }
+                  >
+                    <ZoomOut fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+
+                <Tooltip title="Increase font size">
+                  <IconButton
+                    size="small"
+                    onClick={
+                      increaseFontSize
+                    }
+                  >
+                    <ZoomIn fontSize="small" />
+                  </IconButton>
+                </Tooltip>
 
                 <Tooltip
                   title={
@@ -576,6 +933,7 @@ const Editor = () => {
                   }
                 >
                   <IconButton
+                    size="small"
                     onClick={
                       handleCopyCode
                     }
@@ -586,6 +944,7 @@ const Editor = () => {
 
                 <Tooltip title="Reset code">
                   <IconButton
+                    size="small"
                     onClick={
                       handleResetCode
                     }
@@ -596,6 +955,7 @@ const Editor = () => {
 
                 <Tooltip title="Download code">
                   <IconButton
+                    size="small"
                     onClick={
                       handleDownloadCode
                     }
@@ -604,12 +964,41 @@ const Editor = () => {
                   </IconButton>
                 </Tooltip>
 
+                <Tooltip
+                  title={
+                    isFullscreen
+                      ? "Exit fullscreen"
+                      : "Fullscreen"
+                  }
+                >
+                  <IconButton
+                    size="small"
+                    onClick={
+                      toggleFullscreen
+                    }
+                  >
+                    {isFullscreen ? (
+                      <FullscreenExit fontSize="small" />
+                    ) : (
+                      <Fullscreen fontSize="small" />
+                    )}
+                  </IconButton>
+                </Tooltip>
+
               </Box>
 
             </Box>
 
-            <Box className="code-editor">
-
+            <Box
+              className={`code-editor ${
+                wordWrap
+                  ? "word-wrap-enabled"
+                  : ""
+              }`}
+              style={{
+                fontSize: `${fontSize}px`,
+              }}
+            >
               <CodeMirror
                 value={code}
                 height="100%"
@@ -638,26 +1027,73 @@ const Editor = () => {
                     true,
                 }}
               />
-
             </Box>
 
             <Box className="editor-footer">
 
-              <Typography variant="caption">
-                {language}
-              </Typography>
+              <Box className="footer-left">
 
-              <Typography variant="caption">
-                Ctrl + Enter to run
-              </Typography>
+                <Typography variant="caption">
+                  {language}
+                </Typography>
+
+                <Divider
+                  orientation="vertical"
+                  flexItem
+                />
+
+                <Typography variant="caption">
+                  {lineCount} lines
+                </Typography>
+
+                <Divider
+                  orientation="vertical"
+                  flexItem
+                />
+
+                <Typography variant="caption">
+                  {characterCount} chars
+                </Typography>
+
+              </Box>
+
+              <Box className="footer-right">
+
+                <Typography variant="caption">
+                  Ctrl + Enter
+                </Typography>
+
+                <Typography variant="caption">
+                  Run
+                </Typography>
+
+              </Box>
 
             </Box>
 
           </Box>
 
-          {/* RIGHT PANEL */}
+          {/* =========================
+              RESIZE HANDLE
+          ========================= */}
 
-          <Box className="side-panel">
+          <Box
+            className="resize-handle"
+            onMouseDown={
+              startResize
+            }
+          />
+
+          {/* =========================
+              SIDE PANEL
+          ========================= */}
+
+          <Box
+            className="side-panel"
+            style={{
+              width: `${panelWidth}px`,
+            }}
+          >
 
             {/* INPUT */}
 
@@ -694,7 +1130,7 @@ const Editor = () => {
 
             </Box>
 
-            {/* RUN CONTROLS */}
+            {/* RUN */}
 
             <Box className="run-controls">
 
@@ -735,7 +1171,7 @@ const Editor = () => {
 
             </Box>
 
-            {/* TERMINAL HEADER */}
+            {/* TERMINAL */}
 
             <Box className="result-header">
 
@@ -772,8 +1208,6 @@ const Editor = () => {
 
             </Box>
 
-            {/* TERMINAL */}
-
             <Box
               className="output-container"
               ref={outputRef}
@@ -782,6 +1216,10 @@ const Editor = () => {
               {!hasResult &&
                 !isRunning && (
                   <Box className="empty-output">
+
+                    <Box className="terminal-symbol">
+                      {">_"}
+                    </Box>
 
                     <Typography>
                       Terminal is ready
