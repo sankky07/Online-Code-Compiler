@@ -15,8 +15,8 @@ methods: ["GET", "POST"],
 app.use(express.json({ limit: "1mb" }));
 
 const PORT = process.env.PORT || 5000;
-const JUDGE0_API_URL = process.env.JUDGE0_API_URL;
-const JUDGE0_API_KEY = process.env.JUDGE0_API_KEY;
+const JUDGE0_API_URL =
+  process.env.JUDGE0_API_URL || "https://ce.judge0.com";
 
 const languageMapping = {
 C: 50,
