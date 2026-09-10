@@ -15,8 +15,8 @@ methods: ["GET", "POST"],
 app.use(express.json({ limit: "1mb" }));
 
 const PORT = process.env.PORT || 5000;
-const JUDGE0_API_URL =
-process.env.JUDGE0_API_URL || "https://ce.judge0.com";
+const JUDGE0_API_URL = process.env.JUDGE0_API_URL;
+const JUDGE0_API_KEY = process.env.JUDGE0_API_KEY;
 
 const languageMapping = {
 C: 50,
@@ -37,7 +37,6 @@ app.get("/health", (req, res) => {
 res.json({
 success: true,
 status: "healthy",
-service: "online-code-compiler-backend",
 });
 });
 
@@ -58,24 +57,66 @@ error: `Unsupported language: ${language}`,
 });
 }
 
-try {
-const submission = await axios.post(
-`${JUDGE0_API_URL}/submissions?base64_encoded=false&wait=true`,
-{
-source_code: code,
-language_id: languageMapping[language],
-stdin: input,
-},
-{
-headers: {
-"Content-Type": "application/json",
-},
-timeout: 30000,
+if (!JUDGE0_API_URL) {
+return res.status(500).json({
+success: false,
+error: "Judge0 API is not configured",
+});
 }
+
+try {
+const headers = {
+"Content-Type": "application/json",
+};
+
+
+if (JUDGE0_API_KEY) {
+  headers["X-Auth-Token"] = JUDGE0_API_KEY;
+}
+
+// Create submission
+const submissionResponse = await axios.post(
+  `${JUDGE0_API_URL}/submissions?base64_encoded=false&wait=false`,
+  {
+    source_code: code,
+    language_id: languageMapping[language],
+    stdin: input,
+  },
+  {
+    headers,
+    timeout: 15000,
+  }
 );
 
+const token = submissionResponse.data.token;
 
-const result = submission.data;
+// Poll for result
+let result = null;
+
+for (let attempt = 0; attempt < 20; attempt++) {
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+
+  const resultResponse = await axios.get(
+    `${JUDGE0_API_URL}/submissions/${token}?base64_encoded=false`,
+    {
+      headers,
+      timeout: 10000,
+    }
+  );
+
+  result = resultResponse.data;
+
+  if (result.status && result.status.id > 2) {
+    break;
+  }
+}
+
+if (!result) {
+  return res.status(504).json({
+    success: false,
+    error: "Execution timed out",
+  });
+}
 
 res.json({
   success: true,
@@ -90,7 +131,7 @@ res.json({
 
 
 } catch (error) {
-console.error("Execution error:", error.message);
+console.error("Judge0 execution error:", error.message);
 
 
 if (error.response) {
@@ -99,11 +140,7 @@ if (error.response) {
 
 res.status(500).json({
   success: false,
-  error: "Code execution service is currently unavailable",
-  details:
-    process.env.NODE_ENV === "development"
-      ? error.message
-      : undefined,
+  error: "Code execution service is unavailable",
 });
 
 
@@ -111,6 +148,5 @@ res.status(500).json({
 });
 
 app.listen(PORT, () => {
-console.log(`✅ Server running on port ${PORT}`);
-console.log(`🌐 Judge0 API: ${JUDGE0_API_URL}`);
+console.log(`Server running on port ${PORT}`);
 });
