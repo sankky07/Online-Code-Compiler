@@ -366,13 +366,16 @@ backend/.env
 ```markdown
 ## 📸 Screenshots
 
+```markdown
+## 📸 Screenshots
+
 ### 🌙 Dark Mode
 
 ![Online Code Compiler - Dark Mode](screenshots/dark.png)
 
 ### ☀️ Light Mode
 
-![Online Code Compiler - Light Mode](screenshots/light.png
+![Online Code Compiler - Light Mode](screenshots/light.png)
 
 ---
 
