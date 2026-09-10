@@ -31,9 +31,9 @@ import {
   FullscreenExit,
   PlayArrow,
   RestartAlt,
+  WrapText,
   ZoomIn,
   ZoomOut,
-  WrapText,
 } from "@mui/icons-material";
 
 import {
@@ -210,11 +210,53 @@ const Editor = () => {
   const outputRef =
     useRef(null);
 
-  const resizeState =
-    useRef(null);
+  const resizingRef =
+    useRef(false);
+
+  const resizeStartX =
+    useRef(0);
+
+  const resizeStartWidth =
+    useRef(380);
 
   /* =========================
-     LOAD SAVED STATE
+     THEME
+  ========================= */
+
+  const muiTheme = useMemo(
+    () =>
+      createTheme({
+        palette: {
+          mode: darkMode
+            ? "dark"
+            : "light",
+
+          primary: {
+            main: darkMode
+              ? "#58a6ff"
+              : "#1976d2",
+          },
+
+          background: {
+            default: darkMode
+              ? "#0d1117"
+              : "#f5f7fa",
+
+            paper: darkMode
+              ? "#161b22"
+              : "#ffffff",
+          },
+        },
+
+        shape: {
+          borderRadius: 10,
+        },
+      }),
+    [darkMode]
+  );
+
+  /* =========================
+     LOAD SAVED SETTINGS
   ========================= */
 
   useEffect(() => {
@@ -324,7 +366,9 @@ const Editor = () => {
           error
         );
 
-        setSaveState("Not saved");
+        setSaveState(
+          "Not saved"
+        );
       }
     }, 500);
 
@@ -342,42 +386,6 @@ const Editor = () => {
   ]);
 
   /* =========================
-     THEME
-  ========================= */
-
-  const muiTheme = useMemo(
-    () =>
-      createTheme({
-        palette: {
-          mode: darkMode
-            ? "dark"
-            : "light",
-
-          primary: {
-            main: darkMode
-              ? "#58a6ff"
-              : "#1976d2",
-          },
-
-          background: {
-            default: darkMode
-              ? "#0d1117"
-              : "#f5f7fa",
-
-            paper: darkMode
-              ? "#161b22"
-              : "#ffffff",
-          },
-        },
-
-        shape: {
-          borderRadius: 10,
-        },
-      }),
-    [darkMode]
-  );
-
-  /* =========================
      CLEAR RESULTS
   ========================= */
 
@@ -392,7 +400,7 @@ const Editor = () => {
     }, []);
 
   /* =========================
-     LANGUAGE
+     LANGUAGE CHANGE
   ========================= */
 
   const handleLanguageChange =
@@ -669,51 +677,21 @@ const Editor = () => {
     };
 
   /* =========================
-     RESIZE START
+     RESIZE
   ========================= */
 
-  const startResize =
-    (event) => {
-      event.preventDefault();
-
-      resizeState.current = {
-        startX: event.clientX,
-        startWidth: panelWidth,
-      };
-
-      document.body.style.cursor =
-        "col-resize";
-
-      document.body.style.userSelect =
-        "none";
-
-      window.addEventListener(
-        "mousemove",
-        handleResize
-      );
-
-      window.addEventListener(
-        "mouseup",
-        stopResize
-      );
-    };
-
-  /* =========================
-     RESIZE MOVE
-  ========================= */
-
-  const handleResize =
-    (event) => {
-      if (!resizeState.current) {
+  const handleResizeMove =
+    useCallback((event) => {
+      if (!resizingRef.current) {
         return;
       }
 
       const difference =
-        resizeState.current.startX -
+        resizeStartX.current -
         event.clientX;
 
       const newWidth =
-        resizeState.current.startWidth +
+        resizeStartWidth.current +
         difference;
 
       setPanelWidth(
@@ -725,16 +703,16 @@ const Editor = () => {
           600
         )
       );
-    };
+    }, []);
 
-  /* =========================
-     RESIZE STOP
-  ========================= */
+  const handleResizeEnd =
+    useCallback(() => {
+      if (!resizingRef.current) {
+        return;
+      }
 
-  const stopResize =
-    () => {
-      resizeState.current =
-        null;
+      resizingRef.current =
+        false;
 
       document.body.style.cursor =
         "";
@@ -744,24 +722,51 @@ const Editor = () => {
 
       window.removeEventListener(
         "mousemove",
-        handleResize
+        handleResizeMove
       );
 
       window.removeEventListener(
         "mouseup",
-        stopResize
+        handleResizeEnd
+      );
+    }, [handleResizeMove]);
+
+  const handleResizeStart =
+    (event) => {
+      event.preventDefault();
+
+      resizingRef.current =
+        true;
+
+      resizeStartX.current =
+        event.clientX;
+
+      resizeStartWidth.current =
+        panelWidth;
+
+      document.body.style.cursor =
+        "col-resize";
+
+      document.body.style.userSelect =
+        "none";
+
+      window.addEventListener(
+        "mousemove",
+        handleResizeMove
+      );
+
+      window.addEventListener(
+        "mouseup",
+        handleResizeEnd
       );
     };
 
   /* =========================
-     RESIZE CLEANUP
+     CLEANUP RESIZE
   ========================= */
 
   useEffect(() => {
     return () => {
-      resizeState.current =
-        null;
-
       document.body.style.cursor =
         "";
 
@@ -770,22 +775,25 @@ const Editor = () => {
 
       window.removeEventListener(
         "mousemove",
-        handleResize
+        handleResizeMove
       );
 
       window.removeEventListener(
         "mouseup",
-        stopResize
+        handleResizeEnd
       );
     };
-  }, []);
+  }, [
+    handleResizeMove,
+    handleResizeEnd,
+  ]);
 
   /* =========================
      KEYBOARD SHORTCUTS
   ========================= */
 
   useEffect(() => {
-    const handleKeyboardShortcut =
+    const handleKeyboard =
       (event) => {
         if (
           (event.ctrlKey ||
@@ -818,13 +826,13 @@ const Editor = () => {
 
     window.addEventListener(
       "keydown",
-      handleKeyboardShortcut
+      handleKeyboard
     );
 
     return () => {
       window.removeEventListener(
         "keydown",
-        handleKeyboardShortcut
+        handleKeyboard
       );
     };
   }, [
@@ -850,7 +858,7 @@ const Editor = () => {
   ]);
 
   /* =========================
-     CODE STATISTICS
+     STATISTICS
   ========================= */
 
   const lineCount =
@@ -865,6 +873,10 @@ const Editor = () => {
     Boolean(output) ||
     Boolean(errorOutput) ||
     Boolean(compileOutput);
+
+  /* =========================
+     UI
+  ========================= */
 
   return (
     <ThemeProvider
@@ -1117,6 +1129,8 @@ const Editor = () => {
 
             </Box>
 
+            {/* CODE */}
+
             <Box
               className={`code-editor ${
                 wordWrap
@@ -1124,7 +1138,8 @@ const Editor = () => {
                   : ""
               }`}
               style={{
-                fontSize: `${fontSize}px`,
+                fontSize:
+                  `${fontSize}px`,
               }}
             >
               <CodeMirror
@@ -1156,6 +1171,8 @@ const Editor = () => {
                 }}
               />
             </Box>
+
+            {/* FOOTER */}
 
             <Box className="editor-footer">
 
@@ -1201,12 +1218,12 @@ const Editor = () => {
 
           </Box>
 
-          {/* RESIZE HANDLE */}
+          {/* RESIZE */}
 
           <Box
             className="resize-handle"
             onMouseDown={
-              startResize
+              handleResizeStart
             }
           />
 
@@ -1215,7 +1232,8 @@ const Editor = () => {
           <Box
             className="side-panel"
             style={{
-              width: `${panelWidth}px`,
+              width:
+                `${panelWidth}px`,
             }}
           >
 
@@ -1295,7 +1313,7 @@ const Editor = () => {
 
             </Box>
 
-            {/* TERMINAL */}
+            {/* TERMINAL HEADER */}
 
             <Box className="result-header">
 
@@ -1332,7 +1350,7 @@ const Editor = () => {
 
             </Box>
 
-            {/* OUTPUT */}
+            {/* TERMINAL */}
 
             <Box
               className="output-container"
