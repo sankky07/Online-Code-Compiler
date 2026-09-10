@@ -92,22 +92,24 @@ app.post("/execute", async (req, res) => {
 
     let result = null;
 
-    for (let attempt = 0; attempt < 30; attempt++) {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+   for (let attempt = 0; attempt < 30; attempt++) {
+  const delay = Math.min(200 + attempt * 100, 1000);
 
-      const resultResponse = await axios.get(
-        `${JUDGE0_API_URL}/submissions/${token}?base64_encoded=false`,
-        {
-          timeout: 10000,
-        }
-      );
+  await new Promise((resolve) => setTimeout(resolve, delay));
 
-      result = resultResponse.data;
-
-      if (result.status && result.status.id > 2) {
-        break;
-      }
+  const resultResponse = await axios.get(
+    `${JUDGE0_API_URL}/submissions/${token}?base64_encoded=false`,
+    {
+      timeout: 5000,
     }
+  );
+
+  result = resultResponse.data;
+
+  if (result.status && result.status.id > 2) {
+    break;
+  }
+}
 
     if (!result || !result.status) {
       return res.status(504).json({
