@@ -363,17 +363,16 @@ backend/.env
 
 ---
 
+```markdown
 ## 📸 Screenshots
 
-Recommended screenshots to add later:
+### 🌙 Dark Mode
 
-```text
-screenshots/
-├── editor.png
-├── dark-mode.png
-├── light-mode.png
-└── terminal.png
-```
+![Online Code Compiler - Dark Mode](screenshots/dark.png)
+
+### ☀️ Light Mode
+
+![Online Code Compiler - Light Mode](screenshots/light.png
 
 ---
 
