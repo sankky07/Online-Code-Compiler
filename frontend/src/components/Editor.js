@@ -294,31 +294,25 @@ const Editor = () => {
   };
 
   useEffect(() => {
-    const handleKeyboardShortcut = (event) => {
-      if (
-        (event.ctrlKey || event.metaKey) &&
-        event.key === "Enter"
-      ) {
-        event.preventDefault();
+  const handleKeyboardShortcut = (event) => {
+    if (
+      (event.ctrlKey || event.metaKey) &&
+      event.key === "Enter"
+    ) {
+      event.preventDefault();
 
-        if (!isRunning) {
-          handleRun();
-        }
+      if (!isRunning) {
+        handleRun();
       }
-    };
+    }
+  };
 
-    window.addEventListener(
-      "keydown",
-      handleKeyboardShortcut
-    );
+  window.addEventListener("keydown", handleKeyboardShortcut);
 
-    return () => {
-      window.removeEventListener(
-        "keydown",
-        handleKeyboardShortcut
-      );
-    };
-  }, [code, language, input, isRunning]);
+  return () => {
+    window.removeEventListener("keydown", handleKeyboardShortcut);
+  };
+}, [handleRun, isRunning]);
 
   const hasOutput =
     output || errorOutput || compileOutput;
