@@ -57,7 +57,8 @@ import {
 const BACKEND_URL =
   "https://online-code-compiler-ljop.onrender.com";
 
-const STORAGE_KEY = "online-code-compiler";
+const STORAGE_KEY =
+  "online-code-compiler";
 
 const defaultPrograms = {
   Java: `public class Main {
@@ -120,11 +121,16 @@ const themes = {
 };
 
 const getStatusType = (status) => {
-  if (!status) return "default";
+  if (!status) {
+    return "default";
+  }
 
-  const value = status.toLowerCase();
+  const value =
+    status.toLowerCase();
 
-  if (value === "accepted") return "success";
+  if (value === "accepted") {
+    return "success";
+  }
 
   if (
     value.includes("error") ||
@@ -147,20 +153,27 @@ const getStatusType = (status) => {
 };
 
 const Editor = () => {
-  const [language, setLanguage] = useState("Java");
+  const [language, setLanguage] =
+    useState("Java");
 
   const [code, setCode] = useState(
     defaultPrograms.Java
   );
 
-  const [input, setInput] = useState("");
+  const [input, setInput] =
+    useState("");
 
-  const [output, setOutput] = useState("");
-  const [errorOutput, setErrorOutput] = useState("");
+  const [output, setOutput] =
+    useState("");
+
+  const [errorOutput, setErrorOutput] =
+    useState("");
+
   const [compileOutput, setCompileOutput] =
     useState("");
 
-  const [status, setStatus] = useState("");
+  const [status, setStatus] =
+    useState("");
 
   const [executionTime, setExecutionTime] =
     useState(null);
@@ -196,6 +209,7 @@ const Editor = () => {
     useState(380);
 
   const outputRef = useRef(null);
+
   const resizeRef = useRef(null);
 
   /* =========================
@@ -204,40 +218,73 @@ const Editor = () => {
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(
-        STORAGE_KEY
-      );
+      const saved =
+        localStorage.getItem(
+          STORAGE_KEY
+        );
 
-      if (!saved) return;
-
-      const parsed = JSON.parse(saved);
-
-      if (parsed.language) {
-        setLanguage(parsed.language);
+      if (!saved) {
+        return;
       }
 
-      if (parsed.code) {
+      const parsed =
+        JSON.parse(saved);
+
+      if (
+        parsed.language &&
+        languages[parsed.language]
+      ) {
+        setLanguage(
+          parsed.language
+        );
+      }
+
+      if (
+        typeof parsed.code ===
+        "string"
+      ) {
         setCode(parsed.code);
       }
 
-      if (parsed.input !== undefined) {
+      if (
+        typeof parsed.input ===
+        "string"
+      ) {
         setInput(parsed.input);
       }
 
-      if (parsed.darkMode !== undefined) {
-        setDarkMode(parsed.darkMode);
+      if (
+        typeof parsed.darkMode ===
+        "boolean"
+      ) {
+        setDarkMode(
+          parsed.darkMode
+        );
       }
 
-      if (parsed.theme) {
+      if (
+        parsed.theme &&
+        themes[parsed.theme]
+      ) {
         setTheme(parsed.theme);
       }
 
-      if (parsed.fontSize) {
-        setFontSize(parsed.fontSize);
+      if (
+        typeof parsed.fontSize ===
+        "number"
+      ) {
+        setFontSize(
+          parsed.fontSize
+        );
       }
 
-      if (parsed.wordWrap !== undefined) {
-        setWordWrap(parsed.wordWrap);
+      if (
+        typeof parsed.wordWrap ===
+        "boolean"
+      ) {
+        setWordWrap(
+          parsed.wordWrap
+        );
       }
     } catch (error) {
       console.error(
@@ -252,35 +299,45 @@ const Editor = () => {
   ========================= */
 
   useEffect(() => {
-    setSaveState("Saving...");
+    setSaveState(
+      "Saving..."
+    );
 
-    const timer = setTimeout(() => {
-      try {
-        localStorage.setItem(
-          STORAGE_KEY,
-          JSON.stringify({
-            language,
-            code,
-            input,
-            darkMode,
-            theme,
-            fontSize,
-            wordWrap,
-          })
-        );
+    const timer = setTimeout(
+      () => {
+        try {
+          localStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify({
+              language,
+              code,
+              input,
+              darkMode,
+              theme,
+              fontSize,
+              wordWrap,
+            })
+          );
 
-        setSaveState("Saved");
-      } catch (error) {
-        console.error(
-          "Autosave failed:",
-          error
-        );
+          setSaveState(
+            "Saved"
+          );
+        } catch (error) {
+          console.error(
+            "Autosave failed:",
+            error
+          );
 
-        setSaveState("Not saved");
-      }
-    }, 500);
+          setSaveState(
+            "Not saved"
+          );
+        }
+      },
+      500
+    );
 
-    return () => clearTimeout(timer);
+    return () =>
+      clearTimeout(timer);
   }, [
     language,
     code,
@@ -292,7 +349,7 @@ const Editor = () => {
   ]);
 
   /* =========================
-     THEME
+     MUI THEME
   ========================= */
 
   const muiTheme = useMemo(
@@ -331,42 +388,48 @@ const Editor = () => {
      CLEAR RESULTS
   ========================= */
 
-  const clearResults = useCallback(() => {
-    setOutput("");
-    setErrorOutput("");
-    setCompileOutput("");
-    setStatus("");
-    setExecutionTime(null);
-    setMemoryUsage(null);
-  }, []);
+  const clearResults =
+    useCallback(() => {
+      setOutput("");
+      setErrorOutput("");
+      setCompileOutput("");
+      setStatus("");
+      setExecutionTime(null);
+      setMemoryUsage(null);
+    }, []);
 
   /* =========================
-     LANGUAGE
+     LANGUAGE CHANGE
   ========================= */
 
-  const handleLanguageChange = (
-    event
-  ) => {
-    const selectedLanguage =
-      event.target.value;
+  const handleLanguageChange =
+    (event) => {
+      const selectedLanguage =
+        event.target.value;
 
-    setLanguage(selectedLanguage);
+      setLanguage(
+        selectedLanguage
+      );
 
-    setCode(
-      defaultPrograms[selectedLanguage]
-    );
+      setCode(
+        defaultPrograms[
+          selectedLanguage
+        ]
+      );
 
-    clearResults();
-  };
+      clearResults();
+    };
 
   /* =========================
      RUN CODE
   ========================= */
 
-  const handleRun = useCallback(
-    async () => {
+  const handleRun =
+    useCallback(async () => {
       if (!code.trim()) {
-        setStatus("No Code");
+        setStatus(
+          "No Code"
+        );
 
         setOutput(
           "Please enter some code before running."
@@ -400,10 +463,12 @@ const Editor = () => {
             }
           );
 
-        const data = response.data;
+        const data =
+          response.data;
 
         setStatus(
-          data.status || "Finished"
+          data.status ||
+            "Finished"
         );
 
         setOutput(
@@ -415,7 +480,8 @@ const Editor = () => {
         );
 
         setCompileOutput(
-          data.compileOutput || ""
+          data.compileOutput ||
+            ""
         );
 
         setExecutionTime(
@@ -431,14 +497,19 @@ const Editor = () => {
           error
         );
 
-        setStatus("Backend Error");
+        setStatus(
+          "Backend Error"
+        );
 
         if (error.response) {
           setErrorOutput(
-            error.response.data?.error ||
+            error.response.data
+              ?.error ||
               `Backend error (${error.response.status})`
           );
-        } else if (error.request) {
+        } else if (
+          error.request
+        ) {
           setErrorOutput(
             "Could not connect to the backend. Please try again."
           );
@@ -451,198 +522,246 @@ const Editor = () => {
       } finally {
         setIsRunning(false);
       }
-    },
-    [code, language, input]
-  );
+    }, [
+      code,
+      language,
+      input,
+    ]);
 
   /* =========================
      COPY CODE
   ========================= */
 
-  const handleCopyCode = async () => {
-    try {
-      await navigator.clipboard.writeText(
-        code
-      );
+  const handleCopyCode =
+    async () => {
+      try {
+        await navigator.clipboard.writeText(
+          code
+        );
 
-      setCopied(true);
+        setCopied(true);
 
-      setTimeout(() => {
-        setCopied(false);
-      }, 1500);
-    } catch (error) {
-      console.error(
-        "Copy failed:",
-        error
-      );
-    }
-  };
+        setTimeout(() => {
+          setCopied(false);
+        }, 1500);
+      } catch (error) {
+        console.error(
+          "Copy failed:",
+          error
+        );
+      }
+    };
 
   /* =========================
      COPY OUTPUT
   ========================= */
 
-  const handleCopyOutput = async () => {
-    const combinedOutput = [
-      output,
-      compileOutput,
-      errorOutput,
-    ]
-      .filter(Boolean)
-      .join("\n\n");
+  const handleCopyOutput =
+    async () => {
+      const combinedOutput =
+        [
+          output,
+          compileOutput,
+          errorOutput,
+        ]
+          .filter(Boolean)
+          .join("\n\n");
 
-    if (!combinedOutput) return;
+      if (!combinedOutput) {
+        return;
+      }
 
-    try {
-      await navigator.clipboard.writeText(
-        combinedOutput
-      );
-    } catch (error) {
-      console.error(
-        "Copy output failed:",
-        error
-      );
-    }
-  };
+      try {
+        await navigator.clipboard.writeText(
+          combinedOutput
+        );
+      } catch (error) {
+        console.error(
+          "Copy output failed:",
+          error
+        );
+      }
+    };
 
   /* =========================
      DOWNLOAD
   ========================= */
 
-  const handleDownloadCode = () => {
-    const blob = new Blob(
-      [code],
-      {
-        type: "text/plain;charset=utf-8",
-      }
-    );
+  const handleDownloadCode =
+    () => {
+      const blob = new Blob(
+        [code],
+        {
+          type: "text/plain;charset=utf-8",
+        }
+      );
 
-    const url =
-      URL.createObjectURL(blob);
+      const url =
+        URL.createObjectURL(
+          blob
+        );
 
-    const anchor =
-      document.createElement("a");
+      const anchor =
+        document.createElement(
+          "a"
+        );
 
-    anchor.href = url;
+      anchor.href = url;
 
-    anchor.download =
-      `main.${languages[language].extensionName}`;
+      anchor.download =
+        `main.${languages[language].extensionName}`;
 
-    document.body.appendChild(anchor);
+      document.body.appendChild(
+        anchor
+      );
 
-    anchor.click();
+      anchor.click();
 
-    document.body.removeChild(anchor);
+      document.body.removeChild(
+        anchor
+      );
 
-    URL.revokeObjectURL(url);
-  };
+      URL.revokeObjectURL(
+        url
+      );
+    };
 
   /* =========================
      RESET
   ========================= */
 
-  const handleResetCode = () => {
-    setCode(
-      defaultPrograms[language]
-    );
+  const handleResetCode =
+    () => {
+      setCode(
+        defaultPrograms[language]
+      );
 
-    clearResults();
-  };
+      clearResults();
+    };
 
   /* =========================
      FULLSCREEN
   ========================= */
 
-  const toggleFullscreen = () => {
-    setIsFullscreen(
-      (previous) => !previous
-    );
-  };
+  const toggleFullscreen =
+    useCallback(() => {
+      setIsFullscreen(
+        (previous) =>
+          !previous
+      );
+    }, []);
 
   /* =========================
      FONT SIZE
   ========================= */
 
-  const increaseFontSize = () => {
-    setFontSize(
-      (size) => Math.min(size + 1, 24)
-    );
-  };
-
-  const decreaseFontSize = () => {
-    setFontSize(
-      (size) => Math.max(size - 1, 10)
-    );
-  };
-
-  /* =========================
-     RESIZABLE PANEL
-  ========================= */
-
-  const startResize = (event) => {
-    event.preventDefault();
-
-    resizeRef.current = {
-      startX: event.clientX,
-      startWidth: panelWidth,
+  const increaseFontSize =
+    () => {
+      setFontSize(
+        (size) =>
+          Math.min(
+            size + 1,
+            24
+          )
+      );
     };
 
-    document.body.style.cursor =
-      "col-resize";
+  const decreaseFontSize =
+    () => {
+      setFontSize(
+        (size) =>
+          Math.max(
+            size - 1,
+            10
+          )
+      );
+    };
 
-    document.body.style.userSelect =
-      "none";
+  /* =========================
+     RESIZE START
+  ========================= */
 
-    window.addEventListener(
-      "mousemove",
-      handleResize
+  const startResize =
+    useCallback(
+      (event) => {
+        event.preventDefault();
+
+        resizeRef.current = {
+          startX:
+            event.clientX,
+
+          startWidth:
+            panelWidth,
+        };
+
+        document.body.style.cursor =
+          "col-resize";
+
+        document.body.style.userSelect =
+          "none";
+
+        window.addEventListener(
+          "mousemove",
+          handleResize
+        );
+
+        window.addEventListener(
+          "mouseup",
+          stopResize
+        );
+      },
+      [panelWidth]
     );
 
-    window.addEventListener(
-      "mouseup",
-      stopResize
-    );
-  };
+  /* =========================
+     RESIZE MOVE
+  ========================= */
 
-  const handleResize = (event) => {
-    if (!resizeRef.current) return;
+  const handleResize =
+    useCallback(
+      (event) => {
+        if (
+          !resizeRef.current
+        ) {
+          return;
+        }
 
-    const difference =
-      resizeRef.current.startX -
-      event.clientX;
+        const difference =
+          resizeRef.current.startX -
+          event.clientX;
 
-    const newWidth =
-      resizeRef.current.startWidth +
-      difference;
+        const newWidth =
+          resizeRef.current.startWidth +
+          difference;
 
-    setPanelWidth(
-      Math.min(
-        Math.max(newWidth, 300),
-        600
-      )
-    );
-  };
-
-  const stopResize = () => {
-    resizeRef.current = null;
-
-    document.body.style.cursor = "";
-
-    document.body.style.userSelect = "";
-
-    window.removeEventListener(
-      "mousemove",
-      handleResize
+        setPanelWidth(
+          Math.min(
+            Math.max(
+              newWidth,
+              300
+            ),
+            600
+          )
+        );
+      },
+      []
     );
 
-    window.removeEventListener(
-      "mouseup",
-      stopResize
-    );
-  };
+  /* =========================
+     RESIZE STOP
+  ========================= */
 
-  useEffect(() => {
-    return () => {
+  const stopResize =
+    useCallback(() => {
+      resizeRef.current =
+        null;
+
+      document.body.style.cursor =
+        "";
+
+      document.body.style.userSelect =
+        "";
+
       window.removeEventListener(
         "mousemove",
         handleResize
@@ -652,45 +771,53 @@ const Editor = () => {
         "mouseup",
         stopResize
       );
-    };
-  }, []);
+    }, [handleResize]);
 
   /* =========================
-     KEYBOARD SHORTCUT
+     RESIZE CLEANUP
   ========================= */
 
   useEffect(() => {
-    const handleKeyboardShortcut = (
-      event
-    ) => {
-      if (
-        (event.ctrlKey ||
-          event.metaKey) &&
-        event.key === "Enter"
-      ) {
-        event.preventDefault();
-
-        if (!isRunning) {
-          handleRun();
-        }
-      }
-
-      if (
-        (event.ctrlKey ||
-          event.metaKey) &&
-        event.key === "s"
-      ) {
-        event.preventDefault();
-      }
-
-      if (
-        event.key === "F11"
-      ) {
-        event.preventDefault();
-
-        toggleFullscreen();
-      }
+    return () => {
+      stopResize();
     };
+  }, [stopResize]);
+
+  /* =========================
+     KEYBOARD SHORTCUTS
+  ========================= */
+
+  useEffect(() => {
+    const handleKeyboardShortcut =
+      (event) => {
+        if (
+          (event.ctrlKey ||
+            event.metaKey) &&
+          event.key === "Enter"
+        ) {
+          event.preventDefault();
+
+          if (!isRunning) {
+            handleRun();
+          }
+        }
+
+        if (
+          (event.ctrlKey ||
+            event.metaKey) &&
+          event.key === "s"
+        ) {
+          event.preventDefault();
+        }
+
+        if (
+          event.key === "F11"
+        ) {
+          event.preventDefault();
+
+          toggleFullscreen();
+        }
+      };
 
     window.addEventListener(
       "keydown",
@@ -706,16 +833,18 @@ const Editor = () => {
   }, [
     handleRun,
     isRunning,
+    toggleFullscreen,
   ]);
 
   /* =========================
-     AUTO SCROLL TERMINAL
+     TERMINAL AUTO SCROLL
   ========================= */
 
   useEffect(() => {
     if (outputRef.current) {
       outputRef.current.scrollTop =
-        outputRef.current.scrollHeight;
+        outputRef.current
+          .scrollHeight;
     }
   }, [
     output,
@@ -724,7 +853,7 @@ const Editor = () => {
   ]);
 
   /* =========================
-     CODE STATS
+     CODE STATISTICS
   ========================= */
 
   const lineCount =
@@ -741,7 +870,9 @@ const Editor = () => {
     Boolean(compileOutput);
 
   return (
-    <ThemeProvider theme={muiTheme}>
+    <ThemeProvider
+      theme={muiTheme}
+    >
       <Box
         className={`compiler-app ${
           isFullscreen
@@ -750,9 +881,7 @@ const Editor = () => {
         }`}
       >
 
-        {/* =========================
-            HEADER
-        ========================= */}
+        {/* HEADER */}
 
         <Box className="compiler-header">
 
@@ -808,14 +937,18 @@ const Editor = () => {
             >
               {Object.keys(
                 themes
-              ).map((themeName) => (
-                <MenuItem
-                  key={themeName}
-                  value={themeName}
-                >
-                  {themeName}
-                </MenuItem>
-              ))}
+              ).map(
+                (themeName) => (
+                  <MenuItem
+                    key={themeName}
+                    value={
+                      themeName
+                    }
+                  >
+                    {themeName}
+                  </MenuItem>
+                )
+              )}
             </Select>
 
             <Tooltip
@@ -845,15 +978,11 @@ const Editor = () => {
 
         </Box>
 
-        {/* =========================
-            MAIN
-        ========================= */}
+        {/* MAIN */}
 
         <Box className="compiler-main">
 
-          {/* =========================
-              EDITOR
-          ========================= */}
+          {/* EDITOR */}
 
           <Box className="editor-panel">
 
@@ -873,7 +1002,9 @@ const Editor = () => {
                 </Typography>
 
                 <Chip
-                  label={saveState}
+                  label={
+                    saveState
+                  }
                   size="small"
                   variant="outlined"
                   className="save-chip"
@@ -1073,9 +1204,7 @@ const Editor = () => {
 
           </Box>
 
-          {/* =========================
-              RESIZE HANDLE
-          ========================= */}
+          {/* RESIZE HANDLE */}
 
           <Box
             className="resize-handle"
@@ -1084,9 +1213,7 @@ const Editor = () => {
             }
           />
 
-          {/* =========================
-              SIDE PANEL
-          ========================= */}
+          {/* SIDE PANEL */}
 
           <Box
             className="side-panel"
@@ -1130,7 +1257,7 @@ const Editor = () => {
 
             </Box>
 
-            {/* RUN */}
+            {/* RUN CONTROLS */}
 
             <Box className="run-controls">
 
@@ -1171,7 +1298,7 @@ const Editor = () => {
 
             </Box>
 
-            {/* TERMINAL */}
+            {/* TERMINAL HEADER */}
 
             <Box className="result-header">
 
@@ -1207,6 +1334,8 @@ const Editor = () => {
               )}
 
             </Box>
+
+            {/* OUTPUT */}
 
             <Box
               className="output-container"
