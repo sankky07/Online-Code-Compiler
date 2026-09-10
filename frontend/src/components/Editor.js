@@ -883,12 +883,12 @@ const Editor = () => {
       theme={muiTheme}
     >
       <Box
-        className={`compiler-app ${
-          isFullscreen
-            ? "compiler-fullscreen"
-            : ""
-        }`}
-      >
+  className={`compiler-app ${
+    darkMode ? "dark-mode" : "light-mode"
+  } ${
+    isFullscreen ? "compiler-fullscreen" : ""
+  }`}
+>
 
         {/* HEADER */}
 
